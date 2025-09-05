@@ -19,7 +19,8 @@ export default function HeaderTabs() {
     return (
         <div className="w-full">
             <Tabs defaultValue="leads" className="w-full">
-                <TabsList className="rounded-md w-[97%] px-2 mx-auto py-7 flex gap-2 bg-muted/40 shadow">
+                <div className="w-full overflow-x-auto overflow-y-hidden">
+                <TabsList className="rounded-md w-100% md:w-[97%] py-5 px-0 mx-auto flex gap-2 bg-muted/40 shadow">
                     <TabsTrigger
                         value="leads"
                         className="data-[state=active]:bg-teal-600 text-md data-[state=active]:text-white rounded-md px-4 py-5 transition-colors"
@@ -69,7 +70,7 @@ export default function HeaderTabs() {
                         Team Performance
                     </TabsTrigger>
                 </TabsList>
-
+                </div>
                 <TabsContent value="leads">
                     <div className="p-4 text-center text-muted-foreground">
                         <DashboardLeads />
