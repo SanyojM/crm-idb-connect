@@ -171,7 +171,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     className={item.url === currentRoute ? "bg-primary text-primary-foreground" : ""}
                   >
                     <Link href={item.url} className="flex w-full items-center gap-3">
-                      <item.icon />
+                      <item.icon className="h-4 w-4"/>
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -194,7 +194,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     className={item.url === currentRoute ? "bg-primary text-primary-foreground" : ""}
                   >
                     <a href={item.url}>
-                      <item.icon />
+                      <item.icon className="h-4 w-4"/>
                       <span>{item.title}</span>
                       {item.badge && (
                         <span className="ml-auto bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs">
@@ -222,7 +222,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     className={item.url === currentRoute ? "bg-primary text-primary-foreground" : ""}
                   >
                     <a href={item.url}>
-                      <item.icon />
+                      <item.icon className="h-4 w-4"/>
                       <span>{item.title}</span>
                       {item.badge && (
                         <span className="ml-auto bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs">
