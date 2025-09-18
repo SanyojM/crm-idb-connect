@@ -1,73 +1,103 @@
 "use client";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { EllipsisVertical, MessageSquare, Phone, Mail, Repeat } from "lucide-react";
+import {
+    EllipsisVertical,
+    MessageSquare,
+    MessageSquareText,
+    MessageCircleCode,
+    AtSign,
+    Repeat,
+    Replace,
+    NotebookPen,
+    CalendarFold,
+    Plus,
+} from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 export default function LeadActionsMenu() {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <EllipsisVertical className="h-5 w-5 text-gray-600" />
-        </Button>
-      </DropdownMenuTrigger>
+    return (
+        <DropdownMenu>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <EllipsisVertical className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span>Lead Actions</span>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
 
-      <DropdownMenuContent align="end" className="w-56 rounded-lg shadow-md">
-        <DropdownMenuLabel>Lead Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+            <DropdownMenuContent
+                align="end"
+                className="w-60 rounded-xl border bg-white dark:bg-gray-900 shadow-lg p-2"
+            >
+                <DropdownMenuLabel className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                    Lead Actions
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-1" />
 
-        {/* Add Lead */}
-        <DropdownMenuItem>
-          ➕ Add Lead to Application
-        </DropdownMenuItem>
+                {/* Add Lead */}
+                <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg gap-2">
+                    <Plus className="h-4 w-4 text-blue-500" /> Add Lead to Application
+                </DropdownMenuItem>
 
-        {/* Communicate with Submenu */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Communicate
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuItem>📩 Text Message</DropdownMenuItem>
-            <DropdownMenuItem>💬 WhatsApp</DropdownMenuItem>
-            <DropdownMenuItem>📧 Mailer</DropdownMenuItem>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+                {/* Communicate with Submenu */}
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg gap-2">
+                        <MessageSquare className="h-4 w-4 text-green-500" />
+                        Communicate
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="bg-white dark:bg-gray-900 border rounded-xl shadow-md">
+                        <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 gap-2">
+                            <MessageSquareText className="h-4 w-4 text-blue-500" /> Text Message
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 gap-2">
+                            <MessageCircleCode className="h-4 w-4 text-green-500" /> WhatsApp
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 gap-2">
+                            <AtSign className="h-4 w-4 text-purple-500" /> Mailer
+                        </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                </DropdownMenuSub>
 
-        {/* Change Status */}
-        <DropdownMenuItem>
-          🔄 Change Lead Status
-        </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg gap-2">
+                    <Replace className="h-4 w-4 text-orange-500" /> Change Lead Status
+                </DropdownMenuItem>
 
-        {/* Notes */}
-        <DropdownMenuItem>
-          📝 Notes
-        </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg gap-2">
+                    <NotebookPen className="h-4 w-4 text-indigo-500" /> Notes
+                </DropdownMenuItem>
 
-        {/* Follow-up */}
-        <DropdownMenuItem>
-          📅 Follow-up
-        </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg gap-2">
+                    <CalendarFold className="h-4 w-4 text-pink-500" /> Follow-up
+                </DropdownMenuItem>
 
-        {/* Reassign */}
-        <DropdownMenuItem>
-          <Repeat className="mr-2 h-4 w-4" />
-          Reassign
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+                <DropdownMenuItem className="hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg gap-2">
+                    <Repeat className="h-4 w-4 text-red-500" /> Reassign
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 }

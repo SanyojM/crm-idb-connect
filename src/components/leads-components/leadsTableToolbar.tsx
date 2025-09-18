@@ -4,6 +4,7 @@ import {
   ChevronsUpDown,
   RefreshCw,
   MoreHorizontal,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -12,7 +13,7 @@ export default function LeadsTableToolbar() {
     <div className="mt-5 flex flex-col sm:flex-row justify-between items-center gap-3 ">
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="sm">
-          <Star className="h-4 w-4 mr-2" /> Starred
+          <Flag className="h-4 w-4 mr-2" /> Flagged
         </Button>
         <Button variant="secondary" size="sm">
           <Filter className="h-4 w-4 mr-2" /> Apply Filters
