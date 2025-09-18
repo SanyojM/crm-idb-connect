@@ -28,9 +28,9 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
         case "New":
           return status === "new";
         case "Lead In Process":
-          return status === "interested" || status === "inprocess" || status === "contacted";
+          return status === "interested" || status === "inprocess" || status === "contacted" ||status === "hot" || status === "engaged";
         case "Assigned":
-          return !!lead.assignedto;
+          return status==="assigned";
         case "Cold":
           return status === "cold";
         case "Rejected":

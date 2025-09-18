@@ -1,35 +1,24 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Download, FileText, Trash2, ArrowRight } from "lucide-react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-
-interface Lead {
-    id: string;
-    name: string;
-    mobile: string;
-    email: string;
-    qualifications: string;
-    address: string;
-    doneexam: boolean;
-    examscores: any;
-    preferredcountry: string;
-    status: string;
-    type: string;
-    utmsource: string;
-    utmmedium: string | null;
-    utmcampaign: string | null;
-    assignedto?: string | null;
-    createdat?: string;
-    updatedat?: string;
-}
+import { useRouter } from "next/navigation";
+import { Lead } from "@/stores/useLeadStore";
 
 export default function LeadsTableRow({ lead }: { lead: Lead }) {
+    const router = useRouter();
+
+    const handleRedirect = () => {
+        router.push(`/leads/${lead.id}`);
+    };
     return (
         <TableRow>
 
             <TableCell>
-                <div className="font-medium">{lead.id.slice(0, 6).toUpperCase()}</div>
+                <div className="font-medium">{lead.id ? lead.id.slice(0, 6).toUpperCase() : "-"}</div>
                 <div className="text-xs text-gray-500">
                     {lead.createdat ? format(new Date(lead.createdat), "dd MMM yyyy, HH:mm") : "-"}
                 </div>
@@ -45,7 +34,7 @@ export default function LeadsTableRow({ lead }: { lead: Lead }) {
             <TableCell>{lead.assignedto ?? "Unassigned"}</TableCell>
 
             <TableCell>
-                <Badge variant="destructive">{lead.utmsource ?? "-"}</Badge>
+                <Badge variant="destructive" className="capitalize">{lead.utmsource ?? "-"}</Badge>
             </TableCell>
 
             <TableCell>
@@ -55,7 +44,7 @@ export default function LeadsTableRow({ lead }: { lead: Lead }) {
             </TableCell>
 
             <TableCell>
-                <Badge>{lead.status}</Badge>
+                <Badge className="capitalize" variant={"outline"}>{lead.status}</Badge>
             </TableCell>
 
             <TableCell className="text-right">
@@ -72,7 +61,7 @@ export default function LeadsTableRow({ lead }: { lead: Lead }) {
                     <Button variant="ghost" size="icon">
                         <Trash2 className="h-4 w-4 text-gray-500" />
                     </Button>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" onClick={handleRedirect}>
                         <ArrowRight className="h-4 w-4 text-gray-500" />
                     </Button>
                 </div>
