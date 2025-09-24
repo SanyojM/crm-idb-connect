@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: true,
         user: { 
           id: session.user.id, 
-          email: session.user.email ?? "", 
+          email: session.user.email ?? "idbconnect@gmail.com", 
           type: "supabase", 
           role: "admin" 
         },
@@ -139,13 +139,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    const { user } = get();
-    
     // Logout from Supabase if it's a Supabase user
-    if (user?.type === 'supabase') {
-      await supabase.auth.signOut();
-    }
-    
+    await supabase.auth.signOut();
     // Clear partner cookie
     clearPartnerCookie();
     

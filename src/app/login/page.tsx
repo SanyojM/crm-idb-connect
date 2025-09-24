@@ -20,8 +20,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (hasAttemptedLogin && !loading) {
       if (isAuthenticated && user?.role==="admin") {
+        console.log("Admin User Logged In");
         router.push("/dashboard");
       }else if(isAuthenticated && user?.role!=="admin"){
+        console.log("B2B User Logged In");
         router.push("/b2b")
       } else {
         setError("Invalid email or password. Please try again.");

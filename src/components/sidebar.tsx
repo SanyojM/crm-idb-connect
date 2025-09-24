@@ -3,16 +3,16 @@
 import React from "react";
 import { LogOut, Plus } from "lucide-react";
 import SidebarMenus from "./sidebar-menus";
-import { b2bMenus } from "@/config/menus";
+import { menus } from "@/config/menus";
 import { NavUser } from "@/components/nav-user"; // ✅ import your NavUser
 import LeadFormSheet  from "./leads-components/createUpdateLead";
 import { Button } from "@heroui/react";
-import { usePartnerStore } from "@/stores/usePartnerStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function Sidebar() {
   const [open, setOpen] = React.useState(true);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
-  const currentPartner = usePartnerStore((state) => state.currentPartner);
+  const { user } = useAuthStore();
 
   return (
     <>
@@ -53,12 +53,12 @@ export default function Sidebar() {
           </div>
 
           {/* Menus */}
-          <SidebarMenus menus={b2bMenus} open={open} />
+          <SidebarMenus menus={menus} open={open} />
         </div>
 
         {/* ✅ User Section at Bottom */}
         <div className="p-3 border-t border-gray-200">
-          <NavUser user={{name: currentPartner?.name ?? "Partner", email: currentPartner?.email ?? "", avatar: "https://swiftwebapp.sgp1.digitaloceanspaces.com/images/avatar.png"}} />
+          <NavUser user={{name: "Admin", email: user?.email ?? "", avatar: "https://swiftwebapp.sgp1.digitaloceanspaces.com/images/avatar.png"}} />
         </div>
       </div>
       <LeadFormSheet
