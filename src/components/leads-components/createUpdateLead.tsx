@@ -66,7 +66,7 @@ export default function LeadFormSheet({ lead, isOpen, onOpenChange }: LeadFormSh
         utm_medium: user?.role !== "agent" ? "walkin" : partnerDetails?.name,
         utm_campaign: user?.role !== "agent" ? "walkin" : partnerDetails?.agency_name,
         assigned_to: lead.assigned_to || null,
-        created_by: user?.role === "admin" ? null : user?.id,
+        created_by: user?.id,
       });
     } else {
       setFormData(initialState);

@@ -66,7 +66,7 @@ export default function FollowUpComponent({ leadId, leadName, leadPhone }: Follo
 
     const handleAddComment = async ()=>{
         if(!newComment.trim() || !selectedFollowup || selectedFollowup.completed) return;
-        await addComment({ text:newComment, followup_id:selectedFollowup.id! });
+        await addComment({ text:newComment, followup_id:selectedFollowup.id!, created_by:user?.id??"" });
         await fetchFollowupsByLeadId(leadId); setNewComment("");
     };
 

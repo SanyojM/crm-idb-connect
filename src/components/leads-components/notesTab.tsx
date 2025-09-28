@@ -22,6 +22,7 @@ const NoteCard = ({ note }: { note: Note }) => {
   const { deleteNote, updateNote } = useNoteStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(note.text);
+  const { user } = useAuthStore();
 
   const getInitials = (name: string) =>
     name
@@ -45,7 +46,7 @@ const NoteCard = ({ note }: { note: Note }) => {
       return;
     }
     try {
-      await updateNote(note.id!, { text: editText });
+      await updateNote(note.id!, { text: editText, created_by: user?.id });
       toast.success("Note updated successfully.");
       setIsEditing(false);
     } catch (error) {

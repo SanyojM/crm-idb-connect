@@ -1,6 +1,6 @@
-// store/note.ts
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
+import { TimelineEvent } from "@/lib/utils"; // ⬅️ import enums
 
 const supabase = createClient();
 
@@ -19,7 +19,7 @@ interface NoteState {
   notes: Note[];
   loading: boolean;
   fetchNotesByLeadId: (leadId: string) => Promise<void>;
-  addNote: (note: Omit<Note, "id" | "created_at">) => Promise<void>;
+  addNote: (note: Omit<Note, "id" | "created_at" | "partner">) => Promise<void>;
   updateNote: (id: string, updates: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   clearNotes: () => void;
@@ -49,40 +49,73 @@ export const useNoteStore = create<NoteState>((set) => ({
     const { data, error } = await supabase
       .from("notes")
       .insert(note)
-      .select();
+      .select("*, partner:created_by(name)")
+      .single();
 
     if (error) {
       console.error("Error adding note:", error.message);
       throw error;
     }
 
-    set((state) => ({ notes: [...(data as Note[]), ...state.notes] }));
+    // 📌 Log timeline event with the raw text
+    await supabase.from("timeline").insert({
+      lead_id: data.lead_id,
+      event_type: TimelineEvent.LEAD_NOTE_ADDED,
+      new_state: data.text, // ✅ CHANGED
+      created_by: data.created_by,
+    });
+
+    set((state) => ({ notes: [data, ...state.notes] }));
   },
 
   updateNote: async (id, updates) => {
+    const { data: oldData } = await supabase.from("notes").select("*").eq("id", id).single();
+    if (!oldData) throw new Error("Note not found");
+
     const { data, error } = await supabase
       .from("notes")
       .update(updates)
       .eq("id", id)
-      .select();
+      .select("*, partner:created_by(name)")
+      .single();
 
     if (error) {
       console.error("Error updating note:", error.message);
       throw error;
     }
+
+    // 📌 Log timeline event with raw text
+    await supabase.from("timeline").insert({
+      lead_id: data.lead_id,
+      event_type: TimelineEvent.LEAD_NOTE_UPDATED,
+      old_state: oldData.text, // ✅ CHANGED
+      new_state: data.text, // ✅ CHANGED
+      created_by: updates.created_by,
+    });
+
     set((state) => ({
-      notes: state.notes.map((note) =>
-        note.id === id ? { ...note, ...(data?.[0] as Note) } : note
-      ),
+      notes: state.notes.map((note) => (note.id === id ? data : note)),
     }));
   },
 
   deleteNote: async (id) => {
+    const { data: oldData } = await supabase.from("notes").select("*").eq("id", id).single();
+    if (!oldData) throw new Error("Note not found");
+
     const { error } = await supabase.from("notes").delete().eq("id", id);
     if (error) {
       console.error("Error deleting note:", error.message);
       throw error;
     }
+
+    // 📌 Log timeline event with raw text
+    await supabase.from("timeline").insert({
+      lead_id: oldData.lead_id,
+      event_type: TimelineEvent.LEAD_NOTE_DELETED,
+      old_state: oldData.text, // ✅ CHANGED
+      created_by: oldData.created_by,
+    });
+
     set((state) => ({
       notes: state.notes.filter((note) => note.id !== id),
     }));

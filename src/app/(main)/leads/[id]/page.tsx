@@ -11,6 +11,7 @@ import { FilePen } from "lucide-react";
 import NotesTab from "@/components/leads-components/notesTab";
 import StatusTimeline from "@/components/leads-components/leadStatusTimeline";
 import FollowUpComponent from "@/components/leads-components/followupTab";
+import TimeLineTab from "@/components/leads-components/timeLineTab";
 
 const FollowUpsTab = () => <div className="p-4 text-gray-700">📌 Follow Ups Component</div>;
 const DocumentsTab = () => <div className="p-4 text-gray-700">📂 Documents Component</div>;
@@ -227,6 +228,10 @@ export default function LeadDetailPage() {
 
                     <Tab key="chat" title="Chat">
                         <ChatTab />
+                    </Tab>
+
+                    <Tab key="timeline" title="Timeline">
+                        <TimeLineTab leadName={lead?.name ?? ""} leadId={lead?.id ?? ""} />
                     </Tab>
                 </Tabs>
             </div>

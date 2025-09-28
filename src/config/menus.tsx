@@ -37,13 +37,10 @@ export const menus: MenuItem[] = [
   { title: "Course Wiz", icon: <GraduationCap size={22} />, type: "link", link: "/courses" },
   { title: "Announcements", icon: <Bell size={22} />, type: "link", link: "/announcements" },
   { title: "Leads", icon: <Users size={22} />, type: "link", link: "/leads" },
-  { title: "Counsellings", icon: <MessageCircle size={22} />, type: "link", link: "/counsellings" },
-  { title: "Admissions", icon: <School size={22} />, type: "link", link: "/admissions" },
-  { title: "Visas", icon: <FileCheck size={22} />, type: "link", link: "/visas" },
+  { title: "Applications", icon: <School size={22} />, type: "link", link: "/applications" },
   
   // Business
   { title: "Business", type: "title" },
-  { title: "B2B Hub", icon: <Building size={22} />, type: "link", link: "/b2b", badge: "42" },
   { title: "Agents", icon: <ShieldUser size={22} />, type: "link", link: "/agents" },
   { title: "Commissions", icon: <DollarSign size={22} />, type: "link", link: "/commissions" },
 
@@ -57,16 +54,6 @@ export const menus: MenuItem[] = [
   { title: "Helpdesk", icon: <HelpCircle size={22} />, type: "link", link: "/helpdesk" },
   { title: "Settings", icon: <Settings size={22} />, type: "link", link: "/settings" },
 ];
-
-// const mainMenu = [
-//     { title: "Home", url: "/b2b", icon: Home },
-//     { title: "Course Wiz", url: "#", icon: BookOpenCheck },
-//     { title: "Agents Leads", url: "/b2b/agent-leads", icon: ClipboardList },
-//     { title: "Reports", url: "#", icon: FileText },
-//     { title: "Announcements", url: "#", icon: Bell },
-//     { title: "University Commissions", url: "#", icon: Building2 },
-//     { title: "B2B Commissions", url: "#", icon: DollarSign },
-// ];
 
 
 export const b2bMenus: MenuItem[] = [
