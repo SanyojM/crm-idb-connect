@@ -1,11 +1,14 @@
 //tabsWrapper.tsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tabs, Tab, Card, CardBody } from "@heroui/react";
 import LeadsTableToolbar from "./leadsTableToolbar";
 import LeadsDisplay from "./displayLeads";
 import { Lead } from "@/stores/useLeadStore";
 import { ColumnConfig } from "./columnVisibilitySelector";
 import { BulkAssignCounsellorModal } from "./bulkAssignCounsellorModal";
+import { filterLeads as applyFilters } from "@/lib/filterLeads";
+import { LeadFilterState } from "@/types/filters";
+import LeadFiltersDrawer from "./LeadFilters";
 
 
 type TabName = "All" | "New" | "Lead In Process" | "Assigned" | "Cold" | "Rejected";
@@ -43,6 +46,37 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [showOnlyFlagged, setShowOnlyFlagged] = useState(false);
   const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
+  const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
+  const [filters, setFilters] = useState<LeadFilterState>({
+    search: "",
+    types: [],
+    owners: [],
+    statuses: [],
+    sources: [],
+    countries: [],
+  });
+  
+  // Calculate active filter count
+  const filtersActiveCount = useMemo(() => {
+    return filters.types.length + filters.owners.length + filters.statuses.length + 
+           filters.sources.length + filters.countries.length;
+  }, [filters]);
+
+  // Build filter options from current dataset
+  const filterOptions = useMemo(() => {
+    const uniq = <T extends string | null | undefined>(arr: T[]) =>
+      Array.from(new Set(arr.filter(Boolean))) as string[];
+
+    return {
+      types: uniq(leads.map((l) => l.purpose ?? "")),
+      owners: uniq(leads.map((l) => l.assigned_partner?.name ?? "Unassigned")),
+      statuses: uniq(leads.map((l) => (l.status ?? "").toLowerCase())).map(
+        (s) => (s.charAt(0).toUpperCase() + s.slice(1)) || ""
+      ),
+      sources: uniq(leads.map((l) => l.utm_source ?? "")),
+      countries: uniq(leads.map((l) => l.preferred_country ?? "")),
+    };
+  }, [leads]);
   
   const filterLeads = (tab: TabName) => {
     let filteredLeads = leads;
@@ -67,6 +101,9 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
         }
       });
     }
+    
+    // Then apply advanced filters
+    filteredLeads = applyFilters(filteredLeads, filters);
     
     // Then apply flagged filter if active
     if (showOnlyFlagged) {
@@ -110,6 +147,8 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
                     onToggleFlagged={() => setShowOnlyFlagged(!showOnlyFlagged)}
                     currentTabLeads={filterLeads(tab)}
                     onBulkAssign={() => setIsBulkAssignModalOpen(true)}
+                    onOpenFilters={() => setIsFiltersDrawerOpen(true)}
+                    filtersActiveCount={filtersActiveCount}
                   />
                   <LeadsDisplay
                     leads={filterLeads(tab)}
@@ -131,6 +170,14 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
         selectedLeadIds={selectedLeadIds}
         allLeads={leads}
         onComplete={handleBulkAssignComplete}
+      />
+
+      <LeadFiltersDrawer
+        isOpen={isFiltersDrawerOpen}
+        onOpenChange={setIsFiltersDrawerOpen}
+        value={filters}
+        onChange={setFilters}
+        options={filterOptions}
       />
     </div>
   );

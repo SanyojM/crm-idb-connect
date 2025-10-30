@@ -21,6 +21,8 @@ interface LeadsTableToolbarProps {
   onToggleFlagged: () => void;
   currentTabLeads: Lead[];
   onBulkAssign?: () => void;
+  onOpenFilters?: () => void;
+  filtersActiveCount?: number;
 }
 
 export default function LeadsTableToolbar({ 
@@ -31,7 +33,9 @@ export default function LeadsTableToolbar({
   showOnlyFlagged,
   onToggleFlagged,
   currentTabLeads,
-  onBulkAssign
+  onBulkAssign,
+  onOpenFilters,
+  filtersActiveCount = 0
 }: LeadsTableToolbarProps) {
 
   const { user } = useAuthStore();
@@ -100,8 +104,14 @@ export default function LeadsTableToolbar({
             Assign ({selectedLeadIds.length})
           </Button>
         )}
-        <Button variant="secondary" size="sm" disabled className="text-white">
-          <Filter className="h-4 w-4 mr-2" /> Apply Filters
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          onClick={onOpenFilters}
+          className="text-white"
+        >
+          <Filter className="h-4 w-4 mr-2" /> 
+          Apply Filters {filtersActiveCount > 0 && `(${filtersActiveCount})`}
         </Button>
       </div>)}
       <div className="flex items-center gap-2">
