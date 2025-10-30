@@ -61,7 +61,6 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
             <Card>
               <CardBody>
                 <div className="gap-5 flex flex-col">
-                  <LeadsTableToolbar allLeads={leads} selectedLeadIds={selectedLeadIds} />
                   <LeadsDisplay
                     leads={filterLeads(tab)}
                     selectedLeadIds={selectedLeadIds}
