@@ -131,6 +131,22 @@ export function CounsellorLeadsTable() {
     };
   }, [filteredLeads]);
 
+  // Generate filter options from leads data
+  const filterOptions = React.useMemo(() => {
+    const uniq = <T extends string | null | undefined>(arr: T[]) =>
+      Array.from(new Set(arr.filter(Boolean))) as string[];
+
+    return {
+      types: uniq(leads.map((l) => l.purpose ?? "")),
+      owners: [], // Owners filter only for admin
+      statuses: uniq(leads.map((l) => (l.status ?? "").toLowerCase())).map(
+        (s) => (s.charAt(0).toUpperCase() + s.slice(1)) || ""
+      ),
+      sources: uniq(leads.map((l) => l.utm_source ?? "")),
+      countries: uniq(leads.map((l) => l.preferred_country ?? "")),
+    };
+  }, [leads]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -392,13 +408,7 @@ export function CounsellorLeadsTable() {
         onOpenChange={setIsFiltersDrawerOpen}
         value={filters}
         onChange={setFilters}
-        options={{
-          types: [],
-          owners: [],
-          statuses: [],
-          sources: [],
-          countries: [],
-        }}
+        options={filterOptions}
       />
     </div>
   );

@@ -215,21 +215,23 @@ export default function LeadFiltersDrawer({
                       ))}
                     </Select>
 
-                    <Select
-                      label="Owner"
-                      selectionMode="multiple"
-                      selectedKeys={ownersKeys}
-                      onSelectionChange={(keys) =>
-                        setDraftField("owners", Array.from(keys as Set<string>))
-                      }
-                      startContent={<UserRound className="h-4 w-4 text-default-500" />}
-                    >
-                      {options.owners.map((o) => (
-                        <SelectItem key={o} textValue={o}>
-                          {o || "Unassigned"}
-                        </SelectItem>
-                      ))}
-                    </Select>
+                    {options.owners.length > 0 && (
+                      <Select
+                        label="Owner"
+                        selectionMode="multiple"
+                        selectedKeys={ownersKeys}
+                        onSelectionChange={(keys) =>
+                          setDraftField("owners", Array.from(keys as Set<string>))
+                        }
+                        startContent={<UserRound className="h-4 w-4 text-default-500" />}
+                      >
+                        {options.owners.map((o) => (
+                          <SelectItem key={o} textValue={o}>
+                            {o || "Unassigned"}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    )}
 
                     <Select
                       label="Source"
