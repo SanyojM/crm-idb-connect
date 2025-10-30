@@ -12,7 +12,9 @@ import NotesTab from "@/components/leads-components/notesTab";
 import StatusTimeline from "@/components/leads-components/leadStatusTimeline";
 import FollowUpComponent from "@/components/leads-components/followupTab";
 import TimeLineTab from "@/components/leads-components/timeLineTab";
+import ApplicantProfilePanel from "@/components/application-components/applicationProfilePanel";
 import { useSearchParams } from "next/navigation";
+import ApplicationDetailsView from "@/components/application-components/applicationDetailsView";
 
 const FollowUpsTab = () => <div className="p-4 text-gray-700">📌 Follow Ups Component</div>;
 const DocumentsTab = () => <div className="p-4 text-gray-700">📂 Documents Component</div>;
@@ -131,7 +133,7 @@ export default function LeadDetailPage() {
                         <div className="text-sm">
                             <p className="text-gray-500">Lead Owner</p>
                             <p className="text-blue-600 font-medium">
-                                {lead.assigned_to || "Unassigned"}
+                                {lead.assigned_partner?.name || "Unassigned"}
                             </p>
                         </div>
                         <Button
@@ -175,7 +177,7 @@ export default function LeadDetailPage() {
                                 <InfoRow label="UTM Source" value={lead.utm_source} />
                                 <InfoRow label="UTM Medium" value={lead.utm_medium} />
                                 <InfoRow label="UTM Campaign" value={lead.utm_campaign} />
-                                <InfoRow label="Assigned To" value={lead.assigned_to} />
+                                <InfoRow label="Assigned To" value={lead.assigned_partner?.name || "Unassigned"} />
                                 <InfoRow
                                     label="Created At"
                                     value={
@@ -186,6 +188,7 @@ export default function LeadDetailPage() {
                                 />
                             </div>
                         </div>
+                        <ApplicationDetailsView leadId={lead?.id ?? ""} />
                     </Tab>
 
                     <Tab key="notes" title="Notes">
