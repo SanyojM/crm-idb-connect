@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { Lead, useLeadStore } from "@/stores/useLeadStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import LeadActionsMenu from "./tableActionCell";
-import { ArrowRight, FlagIcon, Flag, UserCheck } from "lucide-react";
+import { ArrowRight, FlagIcon, Flag } from "lucide-react";
 import { maskPhone, maskEmail } from "@/lib/maskingUtils";
 import { ColumnConfig } from "./columnVisibilitySelector";
 import { toast } from "sonner";
@@ -139,25 +139,17 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds,
                 )}
               </button>
             </Tooltip>
-            {user?.role === "admin" && (
-              <Tooltip content="Assign Counsellor">
-                <button
-                  type="button"
-                  aria-label="Assign counsellor"
-                  className="cursor-pointer text-lg active:opacity-50 border-none bg-transparent p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
+            <Tooltip content="Actions">
+              <span className="cursor-pointer text-lg text-gray-500 active:opacity-50">
+                <LeadActionsMenu 
+                  leadId={lead.id || ""} 
+                  lead={lead}
+                  showAssign={user?.role === "admin"}
+                  onAssignClick={() => {
                     setSelectedLeadForAssignment(lead);
                     setIsAssignModalOpen(true);
                   }}
-                >
-                  <UserCheck className={`h-4 w-4 ${lead.assigned_to ? 'text-green-500' : 'text-gray-400 hover:text-green-500'}`} />
-                </button>
-              </Tooltip>
-            )}
-            <Tooltip content="Actions">
-              <span className="cursor-pointer text-lg text-gray-500 active:opacity-50">
-                <LeadActionsMenu leadId={lead.id || ""} />
+                />
               </span>
             </Tooltip>
             <Tooltip content="Go to Lead">

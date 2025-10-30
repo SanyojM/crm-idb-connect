@@ -91,17 +91,19 @@ export default function ApplicationPreferences({
             <Label className="text-sm font-medium">Assign to Counsellor</Label>
             <Select
               placeholder="Select Counsellor"
-              selectedKeys={new Set(formData.assigned_to ? [formData.assigned_to] : [])}
+              selectedKeys={new Set(formData.assigned_to ? [String(formData.assigned_to)] : [])}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, assigned_to: e.target.value || null }))
+                setFormData((prev) => ({ ...prev, assigned_to: e.target.value ? String(e.target.value) : null }))
               }
             >
               <SelectItem key="">Unassigned</SelectItem>
-              {counsellors.map((counsellor) => (
-                <SelectItem key={counsellor.id!}>
-                  {counsellor.name} ({counsellor.email})
-                </SelectItem>
-              ))}
+              <>
+                {counsellors.map((counsellor) => (
+                  <SelectItem key={String(counsellor.id!)}>
+                    {counsellor.name} ({counsellor.email})
+                  </SelectItem>
+                ))}
+              </>
             </Select>
           </div>
         )}

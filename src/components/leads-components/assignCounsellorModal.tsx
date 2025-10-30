@@ -101,12 +101,14 @@ export function AssignCounsellorModal({ isOpen, onOpenChange, lead }: AssignCoun
                     onChange={(e) => setSelectedCounsellor(e.target.value)}
                     isDisabled={isAssigning}
                   >
-                    <SelectItem key="">Unassigned</SelectItem>
+                    <SelectItem key="">
+                      Unassigned
+                    </SelectItem>
                     {counsellors.map((counsellor) => (
-                      <SelectItem key={counsellor.id!}>
+                      <SelectItem key={counsellor.id!} >
                         {counsellor.name} - {counsellor.email}
                       </SelectItem>
-                    ))}
+                    )) as unknown as any}
                   </Select>
                 </div>
 

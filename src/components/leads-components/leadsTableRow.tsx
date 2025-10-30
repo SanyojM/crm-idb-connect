@@ -80,7 +80,7 @@ export default function LeadsTableRow({ lead, isSelected, onSelect }: LeadsTable
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <LeadActionsMenu />
+                                    <LeadActionsMenu leadId={lead.id!} />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <span>Actions</span>
