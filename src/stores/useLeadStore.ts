@@ -19,6 +19,8 @@ export interface Lead {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   assigned_to?: string | null;
+  assigned_partner?: { name: string; email?: string; } | null;
+  is_flagged?: boolean;
   created_at?: string;
   created_by?: string | null;
   reason?: string | null;
@@ -45,7 +47,7 @@ export const useLeadStore = create<LeadState>((set) => ({
     set({ loading: true });
     const { data, error } = await supabase
       .from("leads")
-      .select("*")
+      .select("*, assigned_partner:assigned_to(name, email)")
       .eq("type", "lead")
       .order("created_at", { ascending: false });
 
@@ -61,7 +63,7 @@ export const useLeadStore = create<LeadState>((set) => ({
     set({ loading: true });
     const { data, error } = await supabase
       .from("leads")
-      .select("*")
+      .select("*, assigned_partner:assigned_to(name, email)")
       .eq("type", "application")
       .order("created_at", { ascending: false });
 
@@ -76,7 +78,7 @@ export const useLeadStore = create<LeadState>((set) => ({
   fetchLeadById: async (id) => {
     const { data, error } = await supabase
       .from("leads")
-      .select("*")
+      .select("*, assigned_partner:assigned_to(name, email)")
       .eq("id", id)
       .single();
     if (error) {
@@ -90,7 +92,7 @@ export const useLeadStore = create<LeadState>((set) => ({
     set({ loading: true });
     const { data, error } = await supabase
       .from("leads")
-      .select("*")
+      .select("*, assigned_partner:assigned_to(name, email)")
       .eq("created_by", agentId);
     if (error) {
       console.error("Error fetching agent leads:", error.message);

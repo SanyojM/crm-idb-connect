@@ -42,6 +42,7 @@ export const menus: MenuItem[] = [
   // Business
   { title: "Business", type: "title" },
   { title: "Agents", icon: <ShieldUser size={22} />, type: "link", link: "/agents" },
+  { title: "Counsellors", icon: <Users size={22} />, type: "link", link: "/counsellors" },
   { title: "Commissions", icon: <DollarSign size={22} />, type: "link", link: "/commissions" },
 
   // Task Management
@@ -65,4 +66,13 @@ export const b2bMenus: MenuItem[] = [
   { title: "Announcements", icon: <Bell size={22} />, type: "link", link: "#" },
   { title: "University Commissions", icon: <Building size={22} />, type: "link", link: "#" },
   { title: "B2B Commissions", icon: <DollarSign size={22} />, type: "link", link: "#" },
+];
+
+export const counsellorMenus: MenuItem[] = [
+  { title: "Main", type: "title" },
+  { title: "Dashboard", icon: <LayoutDashboard size={22} />, type: "link", link: "/counsellor" },
+  { title: "My Leads", icon: <Users size={22} />, type: "link", link: "/counsellor" },
+  { title: "Follow Ups", icon: <Clock size={22} />, type: "link", link: "/counsellor/follow-ups", badge: "25" },
+  { title: "Tasks", icon: <CheckSquare size={22} />, type: "link", link: "/counsellor/tasks", badge: "1" },
+  { title: "Helpdesk", icon: <HelpCircle size={22} />, type: "link", link: "/counsellor/helpdesk" },
 ];

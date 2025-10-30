@@ -64,7 +64,7 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds 
 
     return {
       types: uniq(leads.map((l) => l.purpose ?? "")),
-      owners: uniq(leads.map((l) => l.assigned_to ?? "Unassigned")),
+      owners: uniq(leads.map((l) => l.assigned_partner?.name ?? "Unassigned")),
       statuses: uniq(leads.map((l) => (l.status ?? "").toLowerCase())).map(
         (s) => (s.charAt(0).toUpperCase() + s.slice(1)) || ""
       ),
@@ -123,7 +123,7 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds 
             </div>
           );
         case "owner":
-          return lead.assigned_to ?? "Unassigned";
+          return lead.assigned_partner?.name || "Unassigned";
         case "type":
           return (
             <Chip radius="sm" size="sm" variant="flat" className="capitalize">
