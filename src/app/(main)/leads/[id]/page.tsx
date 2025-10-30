@@ -47,6 +47,7 @@ export default function LeadDetailPage() {
     const [lead, setLead] = useState<Lead | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSheetOpen, setSheetOpen] = useState(false);
+    const [selectedTab, setSelectedTab] = useState(defaultTab);
 
     const fetchAndSetLead = useCallback(async () => {
         setLoading(true);
@@ -150,7 +151,13 @@ export default function LeadDetailPage() {
                     currentStatus={lead.status || "new"}
                     onChange={handleStatusChange}
                 />
-                <Tabs aria-label="Lead Tabs" variant="underlined" className="mt-6" selectedKey={defaultTab}>
+                <Tabs 
+                    aria-label="Lead Tabs" 
+                    variant="underlined" 
+                    className="mt-6" 
+                    selectedKey={selectedTab}
+                    onSelectionChange={(key) => setSelectedTab(key as string)}
+                >
                     <Tab key="details" title="Details">
                         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-white p-6 rounded-lg shadow">

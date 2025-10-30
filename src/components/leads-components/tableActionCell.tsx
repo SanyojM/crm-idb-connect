@@ -18,10 +18,19 @@ import {
     NotebookPen,
     CalendarFold,
     Plus,
+    UserCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Lead } from "@/stores/useLeadStore";
 
-export default function LeadActionsMenu({ leadId }: { leadId: string }) { // ✅ Accept leadId
+interface LeadActionsMenuProps {
+    leadId: string;
+    lead?: Lead;
+    onAssignClick?: () => void;
+    showAssign?: boolean;
+}
+
+export default function LeadActionsMenu({ leadId, lead, onAssignClick, showAssign = false }: LeadActionsMenuProps) {
     const router = useRouter();
     return (
         <Dropdown>
@@ -32,6 +41,16 @@ export default function LeadActionsMenu({ leadId }: { leadId: string }) { // ✅
             </DropdownTrigger>
             <DropdownMenu aria-label="Lead Actions Menu">
                 <DropdownSection title="Actions">
+                    {showAssign && onAssignClick ? (
+                        <DropdownItem 
+                            key="assign_counsellor" 
+                            startContent={<UserCheck className={`h-4 w-4 ${lead?.assigned_to ? 'text-green-500' : 'text-gray-500'}`} />}
+                            onClick={onAssignClick}
+                        >
+                            {lead?.assigned_to ? 'Reassign Counsellor' : 'Assign Counsellor'}
+                        </DropdownItem>
+                    ) : null}
+
                     <DropdownItem key="add_lead" startContent={<Plus className="h-4 w-4 text-blue-500" />}>
                         Lead to Application
                     </DropdownItem>

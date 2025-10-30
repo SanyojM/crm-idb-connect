@@ -116,12 +116,16 @@ export function BulkAssignCounsellorModal({
                     onChange={(e) => setSelectedCounsellor(e.target.value)}
                     isDisabled={isAssigning}
                   >
-                    <SelectItem key="">Unassign All</SelectItem>
-                    {counsellors.map((counsellor) => (
-                      <SelectItem key={counsellor.id!}>
-                        {counsellor.name} - {counsellor.email}
+                    <>
+                      <SelectItem key="">
+                        Unassign All
                       </SelectItem>
-                    ))}
+                      {counsellors.map((counsellor) => (
+                        <SelectItem key={counsellor.id!}>
+                          {counsellor.name} - {counsellor.email}
+                        </SelectItem>
+                      ))}
+                    </>
                   </Select>
                 </div>
 
