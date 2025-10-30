@@ -12,6 +12,7 @@ import NotesTab from "@/components/leads-components/notesTab";
 import StatusTimeline from "@/components/leads-components/leadStatusTimeline";
 import FollowUpComponent from "@/components/leads-components/followupTab";
 import TimeLineTab from "@/components/leads-components/timeLineTab";
+import { useSearchParams } from "next/navigation";
 
 const FollowUpsTab = () => <div className="p-4 text-gray-700">📌 Follow Ups Component</div>;
 const DocumentsTab = () => <div className="p-4 text-gray-700">📂 Documents Component</div>;
@@ -38,7 +39,8 @@ const InfoRow = ({ label, value }: { label: string; value?: string | null }) => 
 export default function LeadDetailPage() {
     const params = useParams();
     const id = params.id as string;
-
+    const searchParams = useSearchParams();
+    const defaultTab = searchParams.get("tab") || "details";
     const { fetchLeadById, updateLead } = useLeadStore();
     const [lead, setLead] = useState<Lead | null>(null);
     const [loading, setLoading] = useState(true);
@@ -146,7 +148,7 @@ export default function LeadDetailPage() {
                     currentStatus={lead.status || "new"}
                     onChange={handleStatusChange}
                 />
-                <Tabs aria-label="Lead Tabs" variant="underlined" className="mt-6">
+                <Tabs aria-label="Lead Tabs" variant="underlined" className="mt-6" selectedKey={defaultTab}>
                     <Tab key="details" title="Details">
                         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="bg-white p-6 rounded-lg shadow">
@@ -192,9 +194,9 @@ export default function LeadDetailPage() {
 
                     <Tab key="followups" title="Follow Ups">
                         <FollowUpComponent
-                            leadId={lead?.id??""}
-                            leadName={lead?.name??""}
-                            leadPhone={lead?.mobile??""}
+                            leadId={lead?.id ?? ""}
+                            leadName={lead?.name ?? ""}
+                            leadPhone={lead?.mobile ?? ""}
                         />
                     </Tab>
 
