@@ -21,7 +21,7 @@ export default function DashboardLeads() {
 
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mt-6 space-y-6">
       {/* Tiles Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <DashboardTile label="Today's Leads" value={metrics.todaysLeads} loading={loading} />
