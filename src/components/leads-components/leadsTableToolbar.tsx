@@ -14,6 +14,7 @@ import ColumnVisibilitySelector, { ColumnConfig } from "./columnVisibilitySelect
 import { useState } from "react";
 import BulkChangeStatusModal from "./bulkChangeStatusModal";
 import { set } from "date-fns";
+import BulkCommunicationModal from "./bulkCommunicationModal";
 
 interface LeadsTableToolbarProps {
   allLeads: Lead[];
@@ -45,6 +46,7 @@ export default function LeadsTableToolbar({
 
   const { user } = useAuthStore();
   const [isBulkStatusOpen, setIsBulkStatusOpen] = useState(false);
+  const [isBulkCommunicationModalOpen, setIsBulkCommunicationModalOpen] = useState(false);
 
   // Count flagged leads in current view
   const flaggedCount = currentTabLeads.filter(lead => lead.is_flagged === true).length;
@@ -124,6 +126,16 @@ export default function LeadsTableToolbar({
         <Button
           variant="secondary"
           size="sm"
+          className="text-white"
+          disabled={selectedLeadIds.length === 0}
+          onClick={() => setIsBulkCommunicationModalOpen(true)}
+        >
+          Bulk Send Message ({selectedLeadIds.length})
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onOpenFilters}
           className="text-white"
         >
@@ -149,6 +161,17 @@ export default function LeadsTableToolbar({
         selectedLeadIds={selectedLeadIds}
         allLeads={allLeads}
         onComplete={() => (setSelectedLeadIds([]))}
+      />
+      <BulkCommunicationModal
+        isOpen={isBulkCommunicationModalOpen}
+        onOpenChange={setIsBulkCommunicationModalOpen}
+        selectedLeadIds={selectedLeadIds}
+        allLeads={allLeads}
+        onComplete={() => (setSelectedLeadIds([]))}
+        // // pass your actual messaging functions here
+        // sendSMS={sendSMS}
+        // sendWhatsAppMessage={sendWhatsAppMessage}
+        // sendEmail={sendEmail}
       />
     </div>
   );
