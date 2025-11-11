@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { usePartnerStore } from "@/stores/usePartnerStore";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const FullPageLoader = () => (
   <div className="flex items-center justify-center h-screen w-screen bg-background">
@@ -21,16 +22,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const loading = useAuthStore((state) => state.loading);
   const { user } = useAuthStore();
   const { loadCurrentPartner } = usePartnerStore();
+  const router = useRouter();
 
   useEffect(() => {
-    initAuth().then(() => {
-      if (user?.type === "partner") {
-        loadCurrentPartner(user.id);
-      }
-    });
-  }, [user?.id]);
+    initAuth();
+  }, [initAuth]);
 
-  if (loading) {
+  // enforce role-based access for B2B (agents)
+  useEffect(() => {
+    if (loading) return;
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (user && user.id) {
+      loadCurrentPartner(user.id).catch(() => {});
+    }
+
+    if (user.role !== "agent") {
+      if (user.role === "counsellor") {
+        router.replace("/counsellor");
+      } else if (user.role === "admin") {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/login");
+      }
+    }
+  }, [loading, user, router, loadCurrentPartner]);
+
+  if (loading || !user || user.role !== "agent") {
     return <FullPageLoader />;
   }
 
