@@ -118,7 +118,7 @@ export default function ContactInformation({
 
         {/* City */}
         <div className="sm:col-span-2 flex flex-col gap-1">
-          <Label>City</Label>
+          <Label>City*</Label>
           <Input
             id="city"
             name="city"

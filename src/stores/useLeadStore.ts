@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
-import { TimelineEvent } from "@/lib/utils"; // import enums
+import { TimelineEvent } from "@/lib/utils";
 
 const supabase = createClient();
 
@@ -126,31 +126,28 @@ export const useLeadStore = create<LeadState>((set, get) => ({
   },
 
   addLead: async (lead) => {
-    const sanitizedLead = Object.fromEntries(
-      Object.entries(lead).map(([key, value]) => [
-        key,
-        value === "" ? null : value,
-      ])
-    );
+    const response = await fetch("/api/internal/create-lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(lead),
+    });
 
-    const { data, error } = await supabase
-      .from("leads")
-      .insert([sanitizedLead])
-      .select();
-
-    if (error) {
-      console.error("Error adding lead:", error.message);
-      throw error;
+    if (!response.ok) {
+      const { error } = await response.json();
+      console.error("Error adding lead:", error);
+      throw new Error(error || "Failed to add lead");
     }
 
-    const newLead = data?.[0] as Lead;
+    const newLead = await response.json() as Lead;
     set((state) => ({ leads: [...state.leads, newLead] }));
 
     // log timeline
     await supabase.from("timeline").insert({
       lead_id: newLead.id,
       event_type: TimelineEvent.LEAD_CREATED,
-      new_state: `Lead created for ${newLead.name}`, // Storing a simple string
+      new_state: `Lead created for ${newLead.name}`,
       created_by: newLead.created_by,
     });
   },

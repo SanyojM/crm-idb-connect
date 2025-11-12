@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { sendWelcomeEmail, generateRandomPassword } from "@/lib/emailService";
 
 interface LeadData {
   name: string;
@@ -18,6 +19,7 @@ interface LeadData {
   utm_campaign?: string | null;
   assigned_to?: string | null;
   reason?: string | null;
+  password? : string | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -52,6 +54,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const newPassword = generateRandomPassword();
+
     // **Sanitize Data**: Convert empty strings to null
     const sanitizedLead = Object.fromEntries(
       Object.entries(leadData).map(([key, value]) => [
@@ -59,6 +63,8 @@ export async function POST(req: NextRequest) {
         value === "" ? null : value,
       ])
     );
+    // Add the new password to the object to be inserted
+    sanitizedLead.password = newPassword;
 
     // **Insert into Supabase**
     const { data, error } = await supabase
@@ -70,6 +76,12 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error("Supabase Insert Error:", error.message);
       return NextResponse.json({ error: "Failed to create lead." }, { status: 500 });
+    }
+
+    try {
+      await sendWelcomeEmail(leadData.email, newPassword);
+    } catch (emailError) {
+      console.error(`Successfully created lead ${data.id} but failed to send email.`, emailError);
     }
 
     // **Success**
