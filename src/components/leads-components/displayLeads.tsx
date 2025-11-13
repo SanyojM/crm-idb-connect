@@ -11,9 +11,10 @@ type LeadsDisplayProps = {
   selectedLeadIds: string[];
   setSelectedLeadIds: Dispatch<SetStateAction<string[]>>;
   columns: ColumnConfig[];
+  showAllSensitive?: boolean;
 };
 
-export default function LeadsDisplay({ leads, selectedLeadIds, setSelectedLeadIds, columns }: LeadsDisplayProps) {
+export default function LeadsDisplay({ leads, selectedLeadIds, setSelectedLeadIds, columns , showAllSensitive, }: LeadsDisplayProps) {
   
   const { loading } = useLeadStore();
   
@@ -29,7 +30,7 @@ export default function LeadsDisplay({ leads, selectedLeadIds, setSelectedLeadId
     );
   }
 
-  return <LeadsTable leads={leads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} columns={columns} />;
+  return <LeadsTable leads={leads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} columns={columns} showAllSensitive={showAllSensitive} />;
 }
 
 
