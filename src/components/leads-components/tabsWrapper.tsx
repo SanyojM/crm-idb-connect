@@ -1,9 +1,11 @@
 //tabsWrapper.tsx
+import { useRef } from "react";
 import { useState, useMemo } from "react";
 import { Tabs, Tab, Card, CardBody } from "@heroui/react";
 import LeadsTableToolbar from "./leadsTableToolbar";
 import LeadsDisplay from "./displayLeads";
 import { Lead } from "@/stores/useLeadStore";
+import { toast } from "sonner";
 import { ColumnConfig } from "./columnVisibilitySelector";
 import { BulkAssignCounsellorModal } from "./bulkAssignCounsellorModal";
 import { filterLeads as applyFilters } from "@/lib/filterLeads";
@@ -47,6 +49,7 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
   const [showOnlyFlagged, setShowOnlyFlagged] = useState(false);
   const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
+  const [showAllSensitive, setShowAllSensitive] = useState(false);
   const [filters, setFilters] = useState<LeadFilterState>({
     search: "",
     types: [],
@@ -55,11 +58,13 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
     sources: [],
     countries: [],
   });
-  
+
+  const toastShownRef = useRef(false);
+
   // Calculate active filter count
   const filtersActiveCount = useMemo(() => {
-    return filters.types.length + filters.owners.length + filters.statuses.length + 
-           filters.sources.length + filters.countries.length;
+    return filters.types.length + filters.owners.length + filters.statuses.length +
+      filters.sources.length + filters.countries.length;
   }, [filters]);
 
   // Build filter options from current dataset
@@ -77,10 +82,10 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
       countries: uniq(leads.map((l) => l.preferred_country ?? "")),
     };
   }, [leads]);
-  
+
   const filterLeads = (tab: TabName) => {
     let filteredLeads = leads;
-    
+
     // First filter by tab
     if (tab !== "All") {
       filteredLeads = leads.filter((lead) => {
@@ -101,15 +106,15 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
         }
       });
     }
-    
+
     // Then apply advanced filters
     filteredLeads = applyFilters(filteredLeads, filters);
-    
+
     // Then apply flagged filter if active
     if (showOnlyFlagged) {
       filteredLeads = filteredLeads.filter((lead) => lead.is_flagged === true);
     }
-    
+
     return filteredLeads;
   };
 
@@ -138,8 +143,9 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
             <Card>
               <CardBody>
                 <div className="gap-5 flex flex-col">
-                  <LeadsTableToolbar 
-                    allLeads={leads} 
+                  <LeadsTableToolbar
+                    key={String(showAllSensitive)}
+                    allLeads={leads}
                     selectedLeadIds={selectedLeadIds}
                     setSelectedLeadIds={setSelectedLeadIds}
                     columns={columns}
@@ -150,12 +156,41 @@ export default function TabsWrapper({ leads }: TabsWrapperProps) {
                     onBulkAssign={() => setIsBulkAssignModalOpen(true)}
                     onOpenFilters={() => setIsFiltersDrawerOpen(true)}
                     filtersActiveCount={filtersActiveCount}
+                    showAllSensitive={showAllSensitive}
+                    onToggleAllSensitive={() => {
+                      if (selectedLeadIds.length === 0) {
+                        toast.error("Select at least one lead");
+                        return;
+                      }
+
+                      setShowAllSensitive(prev => {
+                        const newValue = !prev;
+
+                        // Prevent double toast in React Strict Mode
+                        if (!toastShownRef.current) {
+                          toastShownRef.current = true;
+
+                          if (newValue) {
+                            toast.success("Showing all emails & phones");
+                          } else {
+                            toast.success("Hiding all emails & phones");
+                          }
+
+                          setTimeout(() => {
+                            toastShownRef.current = false;
+                          }, 50);
+                        }
+
+                        return newValue;
+                      });
+                    }}
                   />
                   <LeadsDisplay
                     leads={filterLeads(tab)}
                     selectedLeadIds={selectedLeadIds}
                     setSelectedLeadIds={setSelectedLeadIds}
                     columns={columns}
+                    showAllSensitive={showAllSensitive}
                   />
 
                 </div>

@@ -6,6 +6,8 @@ import {
   MoreHorizontal,
   RefreshCw,
   UserCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Lead } from "@/stores/useLeadStore";
@@ -13,8 +15,8 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import ColumnVisibilitySelector, { ColumnConfig } from "./columnVisibilitySelector";
 import { useState } from "react";
 import BulkChangeStatusModal from "./bulkChangeStatusModal";
-import { set } from "date-fns";
 import BulkCommunicationModal from "./bulkCommunicationModal";
+import { Tooltip } from "@heroui/react";
 
 interface LeadsTableToolbarProps {
   allLeads: Lead[];
@@ -28,6 +30,8 @@ interface LeadsTableToolbarProps {
   onBulkAssign?: () => void;
   onOpenFilters?: () => void;
   filtersActiveCount?: number;
+  onToggleAllSensitive?: () => void;
+  showAllSensitive?: boolean;
 }
 
 export default function LeadsTableToolbar({
@@ -41,15 +45,16 @@ export default function LeadsTableToolbar({
   currentTabLeads,
   onBulkAssign,
   onOpenFilters,
-  filtersActiveCount = 0
+  filtersActiveCount = 0,
+  onToggleAllSensitive,
+  showAllSensitive = false,
 }: LeadsTableToolbarProps) {
-
   const { user } = useAuthStore();
   const [isBulkStatusOpen, setIsBulkStatusOpen] = useState(false);
   const [isBulkCommunicationModalOpen, setIsBulkCommunicationModalOpen] = useState(false);
 
   // Count flagged leads in current view
-  const flaggedCount = currentTabLeads.filter(lead => lead.is_flagged === true).length;
+  const flaggedCount = currentTabLeads.filter((lead) => lead.is_flagged === true).length;
 
   const handleDownloadCSV = () => {
     const leadsToExport =
@@ -63,19 +68,33 @@ export default function LeadsTableToolbar({
     }
 
     const headers: (keyof Lead)[] = [
-      "id", "name", "mobile", "email", "alternate_mobile", "type", "city",
-      "purpose", "preferred_country", "status", "utm_source", "utm_medium",
-      "utm_campaign", "assigned_to", "created_at",
+      "id",
+      "name",
+      "mobile",
+      "email",
+      "alternate_mobile",
+      "type",
+      "city",
+      "purpose",
+      "preferred_country",
+      "status",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "assigned_to",
+      "created_at",
     ];
 
     const csvContent = [
       headers.join(","),
-      ...leadsToExport.map(lead =>
-        headers.map(header => {
-          const value = lead[header] ?? "";
-          const stringValue = String(value);
-          return stringValue.includes(",") ? `"${stringValue}"` : stringValue;
-        }).join(",")
+      ...leadsToExport.map((lead) =>
+        headers
+          .map((header) => {
+            const value = lead[header] ?? "";
+            const stringValue = String(value);
+            return stringValue.includes(",") ? `"${stringValue}"` : stringValue;
+          })
+          .join(",")
       ),
     ].join("\n");
 
@@ -83,75 +102,114 @@ export default function LeadsTableToolbar({
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.href = url;
-    link.setAttribute("download", `selected_leads_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `selected_leads_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const handleGlobalEyeToggle = () => {
+    if (!onToggleAllSensitive) return;
+
+    // Just call parent. DO NOT toggle here.
+    onToggleAllSensitive();
+  };
+
   return (
-    <div className="mt-5 flex flex-col sm:flex-row justify-between items-center gap-3 ">
-      {user?.role === "admin" && (<div className="flex items-center gap-2">
-        <Button
-          variant={showOnlyFlagged ? "default" : "secondary"}
-          size="sm"
-          onClick={onToggleFlagged}
-          className={showOnlyFlagged ? "bg-primary text-white hover:bg-primary/90" : "text-white"}
-        >
-          <Flag className={`h-4 w-4 mr-2 ${showOnlyFlagged ? 'fill-white' : 'fill-red-500 text-red-500'}`} />
-          {showOnlyFlagged ? 'Show All' : `Flagged (${flaggedCount})`}
-        </Button>
-        {selectedLeadIds.length > 0 && onBulkAssign && (
+    <div className="mt-5 flex flex-col sm:flex-row justify-between items-center gap-3">
+      {user?.role === "admin" && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showOnlyFlagged ? "default" : "secondary"}
+            size="sm"
+            onClick={onToggleFlagged}
+            className={showOnlyFlagged ? "bg-primary text-white hover:bg-primary/90" : "text-white"}
+          >
+            <Flag
+              className={`h-4 w-4 mr-2 ${showOnlyFlagged ? "fill-white" : "fill-red-500 text-red-500"
+                }`}
+            />
+            {showOnlyFlagged ? "Show All" : `Flagged (${flaggedCount})`}
+          </Button>
+
+          {selectedLeadIds.length > 0 && onBulkAssign && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onBulkAssign}
+              className="text-white"
+            >
+              <UserCheck className="h-4 w-4 mr-2" />
+              Assign ({selectedLeadIds.length})
+            </Button>
+          )}
+
+          {selectedLeadIds.length > 0 && (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="text-white"
+                onClick={() => setIsBulkStatusOpen(true)}
+              >
+                Change Status ({selectedLeadIds.length})
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                className="text-white"
+                onClick={() => setIsBulkCommunicationModalOpen(true)}
+              >
+                Bulk Send Message ({selectedLeadIds.length})
+              </Button>
+            </>
+          )}
+
           <Button
             variant="secondary"
             size="sm"
-            onClick={onBulkAssign}
+            onClick={onOpenFilters}
             className="text-white"
           >
-            <UserCheck className="h-4 w-4 mr-2" />
-            Assign ({selectedLeadIds.length})
+            <Filter className="h-4 w-4 mr-2" />
+            Apply Filters {filtersActiveCount > 0 && `(${filtersActiveCount})`}
           </Button>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+
+        {selectedLeadIds.length > 0 && (
+          <Tooltip content={showAllSensitive ? "Hide All Emails & Phones" : "Show All Emails & Phones"}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleGlobalEyeToggle}
+              className="text-white"
+            >
+              {showAllSensitive ? (
+                <EyeOff className="h-4 w-4 mr-2" />
+              ) : (
+                <Eye className="h-4 w-4 mr-2" />
+              )}
+              {showAllSensitive ? "Hide Info" : "Show Info"}
+            </Button>
+          </Tooltip>
         )}
 
-        <Button
-          variant="secondary"
-          size="sm"
-          className="text-white"
-          disabled={selectedLeadIds.length === 0}
-          onClick={() => setIsBulkStatusOpen(true)}
-        >
-          Change Status ({selectedLeadIds.length})
-        </Button>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          className="text-white"
-          disabled={selectedLeadIds.length === 0}
-          onClick={() => setIsBulkCommunicationModalOpen(true)}
-        >
-          Bulk Send Message ({selectedLeadIds.length})
-        </Button>
-
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onOpenFilters}
-          className="text-white"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Apply Filters {filtersActiveCount > 0 && `(${filtersActiveCount})`}
-        </Button>
-      </div>)}
-      <div className="flex items-center gap-2">
         <ColumnVisibilitySelector
           columns={columns}
           onColumnsChange={onColumnsChange}
           storageKey="leads_column_visibility"
         />
+
         <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
           <Download className="h-4 w-4 mr-2" />
-          {selectedLeadIds.length > 0 ? `Download (${selectedLeadIds.length}) Selected` : 'Download CSV'}
+          {selectedLeadIds.length > 0
+            ? `Download (${selectedLeadIds.length}) Selected`
+            : "Download CSV"}
         </Button>
       </div>
 
@@ -160,18 +218,15 @@ export default function LeadsTableToolbar({
         onOpenChange={setIsBulkStatusOpen}
         selectedLeadIds={selectedLeadIds}
         allLeads={allLeads}
-        onComplete={() => (setSelectedLeadIds([]))}
+        onComplete={() => setSelectedLeadIds([])}
       />
+
       <BulkCommunicationModal
         isOpen={isBulkCommunicationModalOpen}
         onOpenChange={setIsBulkCommunicationModalOpen}
         selectedLeadIds={selectedLeadIds}
         allLeads={allLeads}
-        onComplete={() => (setSelectedLeadIds([]))}
-        // // pass your actual messaging functions here
-        // sendSMS={sendSMS}
-        // sendWhatsAppMessage={sendWhatsAppMessage}
-        // sendEmail={sendEmail}
+        onComplete={() => setSelectedLeadIds([])}
       />
     </div>
   );

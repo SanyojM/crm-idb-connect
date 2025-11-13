@@ -39,9 +39,10 @@ interface LeadsTableProps {
   selectedLeadIds: string[];
   setSelectedLeadIds: Dispatch<SetStateAction<string[]>>;
   columns: ColumnConfig[];
+  showAllSensitive?: boolean;
 }
 
-export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds, columns }: LeadsTableProps) {
+export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds, columns, showAllSensitive }: LeadsTableProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const { updateLead, fetchLeads } = useLeadStore();
@@ -78,6 +79,7 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds,
     }));
   };
 
+
   const handleSelectionChange = (keys: "all" | Set<React.Key>) => {
     const currentLeadIdsOnTab = new Set(leads.map((lead) => lead.id));
     const selectionsFromOtherTabs = selectedLeadIds.filter((id) => !currentLeadIdsOnTab.has(id));
@@ -97,7 +99,18 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds,
 
   const renderCell = React.useCallback(
     (lead: Lead, columnKey: React.Key) => {
-      const showFull = visibleData[lead.id || ""];
+
+      let showFull = false;
+
+      if (visibleData[lead.id || ""]) {
+        showFull = true;
+      }
+      else if (showAllSensitive && selectedLeadIds.includes(lead.id || "")) {
+        showFull = true;
+      }
+      else {
+        showFull = false;
+      }
 
       switch (columnKey) {
         case "date":
@@ -163,6 +176,8 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds,
             </Chip>
           );
 
+
+
         case "actions":
           return (
             <div
@@ -171,32 +186,36 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds,
               onDoubleClick={(e) => e.stopPropagation()}
             >
               {/*  Flag Icon */}
-              <Tooltip content={lead.is_flagged ? "Unflag" : "Flag"}>
-                <button
-                  type="button"
-                  aria-label={lead.is_flagged ? "Unflag lead" : "Flag lead"}
-                  className="cursor-pointer text-lg active:opacity-50 border-none bg-transparent p-0"
-                  onClick={(e) => handleToggleFlag(lead, e)}
-                >
-                  {lead.is_flagged ? (
-                    <Flag className="h-4 w-4 fill-red-500 text-red-500" />
-                  ) : (
-                    <FlagIcon className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                  )}
-                </button>
-              </Tooltip>
+              {!selectedLeadIds.includes(lead.id || "") && (
+                <Tooltip content={lead.is_flagged ? "Unflag" : "Flag"}>
+                  <button
+                    type="button"
+                    aria-label={lead.is_flagged ? "Unflag lead" : "Flag lead"}
+                    className="cursor-pointer text-lg active:opacity-50 border-none bg-transparent p-0"
+                    onClick={(e) => handleToggleFlag(lead, e)}
+                  >
+                    {lead.is_flagged ? (
+                      <Flag className="h-4 w-4 fill-red-500 text-red-500" />
+                    ) : (
+                      <FlagIcon className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    )}
+                  </button>
+                </Tooltip>
+              )}
 
-              {/* Eye Icon - now RIGHT side of flag */}
-              <Tooltip content={showFull ? "Hide Email & Phone" : "Show Email & Phone"}>
-                <button
-                  type="button"
-                  aria-label="Toggle sensitive info"
-                  className="cursor-pointer text-lg text-gray-500 hover:text-gray-700 active:opacity-50 border-none bg-transparent p-0"
-                  onClick={(e) => toggleVisibility(lead.id || "", e)}
-                >
-                  {showFull ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </Tooltip>
+              {/* Eye Icon For per Lead */}
+              {!selectedLeadIds.includes(lead.id || "") && (
+                <Tooltip content={showFull ? "Hide Email & Phone" : "Show Email & Phone"}>
+                  <button
+                    type="button"
+                    aria-label="Toggle sensitive info"
+                    className="cursor-pointer text-lg text-gray-500 hover:text-gray-700 active:opacity-50 border-none bg-transparent p-0"
+                    onClick={(e) => toggleVisibility(lead.id || "", e)}
+                  >
+                    {showFull ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </Tooltip>
+              )}
 
               {/* Actions Menu */}
               <Tooltip content="Actions">
@@ -239,14 +258,14 @@ export default function LeadsTable({ leads, selectedLeadIds, setSelectedLeadIds,
           return lead[columnKey as keyof Lead] as string;
       }
     },
-    [router, handleToggleFlag, visibleData]
+    [router, visibleData, selectedLeadIds, showAllSensitive]
   );
 
   return (
     <>
       <div className="max-h-[77vh] overflow-y-auto border rounded-lg">
         <Table
-          key={JSON.stringify(visibleData)} 
+          key={JSON.stringify(visibleData) + String(showAllSensitive) + JSON.stringify(selectedLeadIds)}
           aria-label="Table of leads"
           selectionMode="multiple"
           className="w-full overflow-auto"
