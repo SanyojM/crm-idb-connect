@@ -47,12 +47,7 @@ export class AuthService {
     };
     return {
       access_token: this.jwtService.sign(payload),
-      partner: {
-        id: partner.id,
-        name: partner.name,
-        email: partner.email,
-        role: partner.role,
-      },
+      payload: payload
     };
   }
 }
