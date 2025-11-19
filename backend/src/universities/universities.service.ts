@@ -8,16 +8,16 @@ export class UniversitiesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUniversityDto: CreateUniversityDto) {
-    const { country_id, ...data } = createUniversityDto;
+    const { countryId, ...data } = createUniversityDto;
     
     // Verify country exists
-    const country = await this.prisma.country.findUnique({ where: { id: country_id } });
-    if (!country) throw new NotFoundException(`Country ${country_id} not found`);
+    const country = await this.prisma.country.findUnique({ where: { id: countryId } });
+    if (!country) throw new NotFoundException(`Country ${countryId} not found`);
 
     return this.prisma.university.create({
       data: {
         ...data,
-        countryId: country_id, // Map camelCase to prisma schema name
+        countryId: countryId, // Map camelCase to prisma schema name
       },
     });
   }
@@ -41,12 +41,12 @@ export class UniversitiesService {
 
   async update(id: string, updateUniversityDto: UpdateUniversityDto) {
     try {
-        const { country_id, ...data } = updateUniversityDto;
+        const { countryId, ...data } = updateUniversityDto;
         return await this.prisma.university.update({
             where: { id },
             data: {
                 ...data,
-                ...(country_id && { countryId: country_id }) // Only update if provided
+                ...(countryId && { countryId }) // Only update if provided
             },
         });
     } catch (error) {
