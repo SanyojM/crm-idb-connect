@@ -8,11 +8,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { Role } from '../auth/roles.enum';
+import { TimelineService } from '../timeline/timeline.service';
 
 @Injectable()
 export class NotesService {
   constructor(
     private prisma: PrismaService,
+    private timelineService: TimelineService,
   ) {}
 
   async create(createNoteDto: CreateNoteDto, userId: string) {
@@ -31,6 +33,8 @@ export class NotesService {
         created_by: userId,
       },
     });
+
+    await this.timelineService.logNoteAdded(note, userId);
 
     return note;
   }

@@ -15,6 +15,7 @@ import {
   BulkDeleteDto,
 } from './dto/bulk-update.dto';
 import { Prisma } from '../../generated/prisma/client';
+import { TimelineService } from '../timeline/timeline.service';
 
 
 @Injectable()
@@ -22,6 +23,7 @@ export class LeadsService {
     constructor(
         private prisma: PrismaService,
         private mailService: MailService,
+        private timelineService: TimelineService,
     ) { }
 
     async bulkAssign(bulkAssignDto: BulkAssignDto, user: any) {
@@ -53,18 +55,16 @@ export class LeadsService {
     const { leadIds, status, reason } = bulkStatusDto;
 
     const result = await this.prisma.leads.updateMany({
-      where: {
-        id: { in: leadIds },
-      },
-      data: {
-        status: status,
-        reason: reason || null, // Set reason, or clear it if not provided
-      },
+      where: { id: { in: leadIds } },
+      data: { status, reason: reason || null },
     });
 
-    // TODO: Add timeline logging for each lead status change.
-    // This requires fetching old statuses first, then looping.
-    
+    // 2. Log events for each lead (async, don't await loop to return fast)
+    leadIds.forEach(async (leadId) => {
+       // Ideally fetch old status first for accuracy, but for bulk we can just log the new status
+       await this.timelineService.logStatusChange(leadId, user.id, 'Previous', status);
+    });
+
     return result;
   }
 
@@ -173,6 +173,8 @@ export class LeadsService {
 
             // 4. Send Welcome Email (Async)
             await this.mailService.sendWelcomeEmail(email, password);
+
+            await this.timelineService.logLeadCreated(newLead);
 
             return newLead;
         } catch (error) {

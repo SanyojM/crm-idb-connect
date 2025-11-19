@@ -360,3 +360,48 @@ model role_permission {
 
   @@id([role_id, permission_id])
 }
+
+model Country {
+  id           String       @id @default(uuid())
+  name         String       @unique
+  flag         String?      // URL to flag image
+  universities University[]
+
+  @@map("countries")
+}
+
+model University {
+  id        String   @id @default(uuid())
+  name      String
+  logo      String?  // URL to logo image
+  city      String?
+  
+  countryId String   @map("country_id")
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  courses   Course[]
+
+  @@map("universities")
+}
+
+model Course {
+  id             String     @id @default(uuid())
+  name           String
+  description    String?    @db.Text
+  level          String?    // e.g., "Masters", "Bachelors"
+  category       String?    // e.g., "IT", "Business"
+  duration       Int?       // In months
+  feeType        String?    @map("fee_type") // e.g., "Per Year", "Total"
+  originalFee    Decimal?   @map("original_fee") @db.Decimal(10, 2)
+  fee            Decimal?   @db.Decimal(10, 2)
+  applicationFee Decimal?   @map("application_fee") @db.Decimal(10, 2)
+  intakeMonth    String?    @map("intake_month") // e.g., "Sep, Jan"
+  commission     String?    // e.g., "1000 USD" or "10%"
+  
+  universityId   String     @map("university_id")
+  university     University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  @@map("courses")
+}

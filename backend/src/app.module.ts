@@ -13,6 +13,10 @@ import { ApplicationsModule } from './applications/applications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { OfflinePaymentsModule } from './offline-payments/offline-payments.module';
+import { CountriesModule } from './countries/countries.module';
+import { CoursesModule } from './courses/courses.module';
+import { UniversitiesModule } from './universities/universities.module';
+import { TimelineModule } from './timeline/timeline.module';
 
 @Module({
   imports: [
@@ -27,6 +31,10 @@ import { OfflinePaymentsModule } from './offline-payments/offline-payments.modul
     DashboardModule,
     PermissionsModule,
     OfflinePaymentsModule,
+    CountriesModule,
+    CoursesModule,
+    UniversitiesModule,
+    TimelineModule
   ],
   controllers: [AppController],
   providers: [AppService],

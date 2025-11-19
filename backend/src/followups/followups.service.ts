@@ -10,11 +10,13 @@ import { UpdateFollowupDto } from './dto/update-followup.dto';
 import { CreateFollowupCommentDto } from './dto/create-comment.dto';
 import { UpdateFollowupCommentDto } from './dto/update-comment.dto';
 import { Role } from '../auth/roles.enum';
+import { TimelineService } from '../timeline/timeline.service';
 
 @Injectable()
 export class FollowupsService {
   constructor(
     private prisma: PrismaService,
+    private timelineService: TimelineService,
     ) {}
 
   // --- Followup Methods ---
@@ -38,6 +40,8 @@ export class FollowupsService {
         created_at: new Date(),
       },
     });
+
+    await this.timelineService.logFollowupAdded(followup, userId);
 
     return followup;
   }
@@ -90,6 +94,10 @@ export class FollowupsService {
       data: updateFollowupDto,
     });
 
+    if (updateFollowupDto.completed === true) {
+      await this.timelineService.logFollowupCompleted(updatedFollowup, user.id);
+    }
+
     return updatedFollowup;
   }
 
@@ -122,8 +130,8 @@ export class FollowupsService {
     createCommentDto: CreateFollowupCommentDto,
     userId: string,
   ) {
-    // Check if the parent followup exists
-    await this.findFollowupOrThrow(followupId);
+
+    const parentFollowup = await this.findFollowupOrThrow(followupId);
 
     const comment = await this.prisma.followup_comments.create({
       data: {
@@ -132,9 +140,17 @@ export class FollowupsService {
         created_by: userId,
       },
       include: {
-        partners: { select: { name: true } }, // Return the creator's name
+        partners: { select: { name: true } },
       },
     });
+
+    if (parentFollowup.lead_id) {
+      await this.timelineService.logCommentAdded(
+        parentFollowup.lead_id, 
+        comment.text || '', 
+        userId
+      );
+    }
 
     // Convert BigInt to string for JSON serialization
     return {

@@ -226,3 +226,160 @@ All routes are relative to the NestJS server URL (e.g., `http://localhost:3000`)
       "last7Days": [ { "label": "Nov 16", "count": 3 } ]
     }
     ```
+---
+
+## 🏳️ Countries API
+
+Manages the list of countries for study abroad destinations.
+
+### Create Country
+-   **Route:** `POST /countries`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:**
+    ```json
+    {
+      "name": "Finland",
+      "flag": "[https://example.com/finland-flag.png](https://example.com/finland-flag.png)"
+    }
+    ```
+-   **Returns:** Created country object.
+-   **Errors:** `409 Conflict` if country name already exists.
+
+### Get All Countries
+-   **Route:** `GET /countries`
+-   **Authentication:** **None (Public)**
+-   **Description:** Retrieves a list of all countries, sorted alphabetically. Used to populate dropdowns on the frontend.
+-   **Returns:** Array of country objects.
+
+### Get Single Country
+-   **Route:** `GET /countries/:id`
+-   **Authentication:** **JWT Required**
+-   **Description:** Retrieves a single country by ID, including a list of its universities.
+
+### Update Country
+-   **Route:** `PATCH /countries/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:** (Partial)
+    ```json
+    {
+      "name": "Republic of Finland"
+    }
+    ```
+
+### Delete Country
+-   **Route:** `DELETE /countries/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Note:** This will cascade delete all Universities and Courses linked to this country.
+
+---
+
+## 🏫 Universities API
+
+Manages universities linked to countries.
+
+### Create University
+-   **Route:** `POST /universities`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:**
+    ```json
+    {
+      "name": "University of Helsinki",
+      "country_id": "uuid-of-country",
+      "city": "Helsinki",
+      "logo": "[https://example.com/logo.png](https://example.com/logo.png)"
+    }
+    ```
+-   **Validation:** `country_id` must be a valid UUID of an existing country.
+
+### Get All Universities
+-   **Route:** `GET /universities`
+-   **Authentication:** **None (Public)**
+-   **Query Params:**
+    -   `?country_id=uuid` (Optional: Filter universities by a specific country).
+-   **Description:** Retrieves a list of universities.
+-   **Returns:** Array of university objects with their associated `country` data.
+
+### Get Single University
+-   **Route:** `GET /universities/:id`
+-   **Authentication:** **JWT Required**
+-   **Description:** Retrieves a single university, including its `country` and list of `courses`.
+
+### Update University
+-   **Route:** `PATCH /universities/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:** (Partial)
+    ```json
+    {
+      "city": "Espoo",
+      "logo": "[https://new-logo-url.com](https://new-logo-url.com)"
+    }
+    ```
+
+### Delete University
+-   **Route:** `DELETE /universities/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Note:** This will cascade delete all Courses linked to this university.
+
+---
+
+## 🎓 Courses API
+
+Manages courses offered by universities.
+
+### Create Course
+-   **Route:** `POST /courses`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:**
+    ```json
+    {
+      "name": "Masters in Computer Science",
+      "university_id": "uuid-of-university",
+      "level": "Masters",
+      "category": "IT",
+      "duration": 24,
+      "fee": 15000,
+      "fee_type": "Per Year",
+      "application_fee": 100,
+      "intake_month": "September, January",
+      "commission": "15%",
+      "description": "Comprehensive CS program..."
+    }
+    ```
+
+### Get All Courses (Search & Filter)
+-   **Route:** `GET /courses`
+-   **Authentication:** **None (Public)** (or Protected based on config)
+-   **Query Params:** (All are optional)
+    -   `search`: String (Matches Course Name or University Name)
+    -   `country`: Array of strings (e.g., `?country=USA&country=UK`)
+    -   `level`: Array of strings (e.g., `?level=Masters`)
+    -   `university`: Array of strings (University names)
+    -   `intake`: Array of strings (e.g., `?intake=Sep`)
+-   **Description:** Returns a filtered list of courses. Includes nested `university` and `country` objects.
+
+### Get Filter Options
+-   **Route:** `GET /courses/filters`
+-   **Authentication:** **None (Public)**
+-   **Description:** Returns available unique values for the frontend sidebar (Countries, Universities, Levels).
+-   **Returns:**
+    ```json
+    {
+      "countries": ["Finland", "USA"],
+      "universities": ["Helsinki", "Aalto"],
+      "levels": ["Bachelors", "Masters"]
+    }
+    ```
+
+### Get Single Course
+-   **Route:** `GET /courses/:id`
+-   **Authentication:** **JWT Required**
+-   **Description:** Retrieves detailed information for a specific course.
+
+### Update Course
+-   **Route:** `PATCH /courses/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:** Partial course object.
+
+### Delete Course
+-   **Route:** `DELETE /courses/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
