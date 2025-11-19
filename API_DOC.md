@@ -383,3 +383,53 @@ Manages courses offered by universities.
 ### Delete Course
 -   **Route:** `DELETE /courses/:id`
 -   **Authentication:** **JWT Required (Admin Only)**
+
+## Announcements API
+
+Manage announcements for user or branch
+
+### Create Announcement
+-   **Route:** `POST /announcements`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:**
+    ```json
+    {
+      "title": "New Feature Released",
+      "content": "We have launched a new feature...",
+      "target_audience": "user", // or "branch"
+      "branch_id": "uuid-of-branch", // Optional, required if target_audience is "branch"
+      "users": ["uuid1", "uuid2"] // Optional, list of user IDs if target_audience is "user"
+    }
+    ```
+-   **Returns:** Created announcement object.
+
+### Get Announcements
+-   **Route:** `GET /announcements`
+-   **Authentication:** **JWT Required**
+-   **Query Params:**
+    -   `?target_audience=user` or `?target_audience=branch`
+    -   `?branch_id=uuid` (if target_audience is "branch")
+-   **Description:** Retrieves announcements based on target audience.
+-   **Returns:** Array of announcement objects.
+
+### Update Announcement
+-   **Route:** `PATCH /announcements/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Request Body:** Partial announcement object.
+
+### Delete Announcement
+-   **Route:** `DELETE /announcements/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Returns:** Deleted announcement object.
+
+### Mark Announcement as Read
+-   **Route:** `POST /announcements/:id/mark-read`
+-   **Authentication:** **JWT Required**
+-   **Description:** Marks the announcement as read for the authenticated user.
+
+### Get Unread Announcements Count
+-   **Route:** `GET /announcements/unread-count`
+-   **Authentication:** **JWT Required**
+-   **Description:** Retrieves the count of unread announcements for the authenticated user.
+
+---
