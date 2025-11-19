@@ -15,7 +15,7 @@ export default function SidebarMenus({
   const currentMenu = usePathname();
 
   return (
-    <div className="flex flex-col gap-2 px-3 h-[72vh] overflow-y-auto">
+    <div className="flex flex-col gap-2">
       {menus.map((menu, index) =>
         menu.type === "link" ? (
           <Tooltip

@@ -55,7 +55,7 @@ export const menus: MenuItem[] = [
   // Support
   { title: "Support", type: "title" },
   { title: "Helpdesk", icon: <HelpCircle size={20} />, type: "link", link: "/helpdesk" },
-  { title: "Settings", icon: <Settings size={20} />, type: "link", link: "/settings" },
+  // { title: "Settings", icon: <Settings size={20} />, type: "link", link: "/settings" },
 ];
 
 

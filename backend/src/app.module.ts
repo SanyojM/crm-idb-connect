@@ -17,6 +17,7 @@ import { CountriesModule } from './countries/countries.module';
 import { CoursesModule } from './courses/courses.module';
 import { UniversitiesModule } from './universities/universities.module';
 import { TimelineModule } from './timeline/timeline.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { TimelineModule } from './timeline/timeline.module';
     CountriesModule,
     CoursesModule,
     UniversitiesModule,
-    TimelineModule
+    TimelineModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

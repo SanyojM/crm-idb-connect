@@ -1,16 +1,18 @@
 "use client";
 
 import React from "react";
-import { LogOut, Plus } from "lucide-react";
+import { LogOut, Plus, Settings, University } from "lucide-react";
 import SidebarMenus from "./sidebar-menus";
 import { menus } from "@/config/menus";
 import { NavUser } from "@/components/nav-user"; // ✅ import your NavUser
 import LeadFormSheet  from "./leads-components/createUpdateLead";
 import { Button } from "@heroui/react";
 import { useAuthStore } from "@/stores/useAuthStore";
+import Link from "next/link";
 
 export default function Sidebar() {
   const [open, setOpen] = React.useState(true);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user } = useAuthStore();
 
@@ -54,13 +56,30 @@ export default function Sidebar() {
           </div>
 
           {/* Menus */}
+          <div className="h-[72vh] overflow-y-auto px-3 flex flex-col gap-2">
+
           <SidebarMenus menus={menus} open={open} />
+          <span
+            onClick={() => setSettingsOpen(!settingsOpen)}
+              className={`flex items-center gap-4 px-3 text-sm py-3 hover:bg-gray-200 rounded-xl text-black transition-colors 
+                ${!open && "justify-center"} `}
+                >
+              <Settings size={20} />
+              {open && <span>Settings</span>}
+          </span>
+          </div>
         </div>
 
         {/* ✅ User Section at Bottom */}
         <div className="py-3 border-t border-gray-200">
           <NavUser user={{name: "Admin", email: user?.email ?? "", avatar: "https://swiftwebapp.sgp1.digitaloceanspaces.com/images/avatar.png"}} />
         </div>
+      </div>
+      <div className={"w-60 p-3 border-r border-gray-300 h-screen absolute left-60 z-50 bg-white " + (settingsOpen ? "block" : "hidden")}>
+          <Link href="/universities" className="flex items-center gap-4 px-3 text-sm py-3 hover:bg-gray-200 rounded-xl text-black transition-colors">
+            <University size={20} />
+            <span>Universities</span>
+          </Link>
       </div>
       <LeadFormSheet
         isOpen={isSheetOpen}

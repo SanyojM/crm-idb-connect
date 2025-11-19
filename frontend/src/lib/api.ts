@@ -240,6 +240,79 @@ export const ApplicationsAPI = {
   }
 };
 
+// --- Countries ---
+export const CountriesAPI = {
+  create: async (data: any) => {
+    const res = await fetch(`${API_BASE}/countries`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  getAll: async () => {
+    const res = await fetch(`${API_BASE}/countries`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+  getById: async (id: string) => {
+    const res = await fetch(`${API_BASE}/countries/${id}`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+  update: async (id: string, data: any) => {
+    const res = await fetch(`${API_BASE}/countries/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  delete: async (id: string) => {
+    const res = await fetch(`${API_BASE}/countries/${id}`, { method: 'DELETE', headers: getHeaders() });
+    return handleResponse(res);
+  },
+};
+
+// --- Universities ---
+export const UniversitiesAPI = {
+  create: async (data: any) => {
+    const res = await fetch(`${API_BASE}/universities`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  getAll: async (countryId?: string) => {
+    const url = countryId ? `${API_BASE}/universities?country_id=${countryId}` : `${API_BASE}/universities`;
+    const res = await fetch(url, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+  getById: async (id: string) => {
+    const res = await fetch(`${API_BASE}/universities/${id}`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+  update: async (id: string, data: any) => {
+    const res = await fetch(`${API_BASE}/universities/${id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  delete: async (id: string) => {
+    const res = await fetch(`${API_BASE}/universities/${id}`, { method: 'DELETE', headers: getHeaders() });
+    return handleResponse(res);
+  },
+};
+
+// --- Courses ---
+export const CoursesAPI = {
+  create: async (data: any) => {
+    const res = await fetch(`${API_BASE}/courses`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  getAll: async (filters?: any) => {
+    const params = new URLSearchParams();
+    if (filters?.universityId) params.append('university', filters.universityId);
+    if (filters?.search) params.append('search', filters.search);
+    const url = params.toString() ? `${API_BASE}/courses?${params}` : `${API_BASE}/courses`;
+    const res = await fetch(url, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+  getById: async (id: string) => {
+    const res = await fetch(`${API_BASE}/courses/${id}`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+  getFilters: async () => {
+    const res = await fetch(`${API_BASE}/courses/filters`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+};
+
 export default {
   LeadsAPI,
   PartnersAPI,
@@ -249,4 +322,7 @@ export default {
   TimelineAPI,
   DashboardAPI,
   ApplicationsAPI,
+  CountriesAPI,
+  UniversitiesAPI,
+  CoursesAPI,
 };

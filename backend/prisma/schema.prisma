@@ -25,7 +25,9 @@ model announcements {
   id                 String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   title              String
   content            String
-  target_audience    String
+  target_audience    String       // user or branch
+  users             String[]             @default([])
+  branch_id         String?
   created_by         String?              @db.Uuid
   created_at         DateTime?            @default(now()) @db.Timestamptz(6)
   is_active          Boolean?             @default(true)
