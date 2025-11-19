@@ -25,12 +25,12 @@ model announcements {
   id                 String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   title              String
   content            String
-  target_audience    String       // user or branch
-  users             String[]             @default([])
-  branch_id         String?
+  target_audience    String
   created_by         String?              @db.Uuid
   created_at         DateTime?            @default(now()) @db.Timestamptz(6)
   is_active          Boolean?             @default(true)
+  branch_id          String?
+  users              String[]             @default([])
   announcement_reads announcement_reads[]
   partners           partners?            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -271,6 +271,77 @@ model timeline {
   @@index([lead_id], map: "idx_timeline_lead_id")
 }
 
+model permission_group {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @unique
+  permissions permission[]
+}
+
+model permission {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String            @unique
+  permission_group_id String?           @db.Uuid
+  permission_group    permission_group? @relation(fields: [permission_group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  role_permissions    role_permission[]
+}
+
+model role {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String            @unique
+  description      String?
+  role_permissions role_permission[]
+}
+
+model role_permission {
+  role_id       String     @db.Uuid
+  permission_id String     @db.Uuid
+  permission    permission @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  role          role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, permission_id])
+}
+
+model Country {
+  id           String       @id @default(uuid())
+  name         String       @unique
+  flag         String?
+  universities University[]
+
+  @@map("countries")
+}
+
+model University {
+  id        String   @id @default(uuid())
+  name      String
+  logo      String?
+  city      String?
+  countryId String   @map("country_id")
+  courses   Course[]
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@map("universities")
+}
+
+model Course {
+  id             String     @id @default(uuid())
+  name           String
+  description    String?
+  level          String?
+  category       String?
+  duration       Int?
+  feeType        String?    @map("fee_type")
+  originalFee    Decimal?   @map("original_fee") @db.Decimal(10, 2)
+  fee            Decimal?   @db.Decimal(10, 2)
+  applicationFee Decimal?   @map("application_fee") @db.Decimal(10, 2)
+  intakeMonth    String?    @map("intake_month")
+  commission     String?
+  universityId   String     @map("university_id")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  university     University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@map("courses")
+}
+
 enum academic_level_enum {
   Class_Xth_SSC   @map("Class Xth/SSC")
   Class_XIIth_HSC @map("Class XIIth/HSC")
@@ -331,79 +402,4 @@ enum timeline_event {
   LEAD_FOLLOWUP_COMMENT_UPDATED
   OFFLINE_PAYMENT_ADDED
   OFFLINE_PAYMENT_DELETED
-}
-
-model permission_group {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String   @unique
-  permissions permission[]
-}
-
-model permission {
-  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String           @unique
-  permission_group_id String?         @db.Uuid
-  permission_group   permission_group? @relation(fields: [permission_group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  role_permissions   role_permission[]
-}
-
-model role {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String   @unique
-  description String?
-  role_permissions role_permission[]
-}
-
-model role_permission {
-  role_id       String     @db.Uuid
-  permission_id String     @db.Uuid
-  role          role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  permission    permission @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@id([role_id, permission_id])
-}
-
-model Country {
-  id           String       @id @default(uuid())
-  name         String       @unique
-  flag         String?      // URL to flag image
-  universities University[]
-
-  @@map("countries")
-}
-
-model University {
-  id        String   @id @default(uuid())
-  name      String
-  logo      String?  // URL to logo image
-  city      String?
-  
-  countryId String   @map("country_id")
-  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  courses   Course[]
-
-  @@map("universities")
-}
-
-model Course {
-  id             String     @id @default(uuid())
-  name           String
-  description    String?    @db.Text
-  level          String?    // e.g., "Masters", "Bachelors"
-  category       String?    // e.g., "IT", "Business"
-  duration       Int?       // In months
-  feeType        String?    @map("fee_type") // e.g., "Per Year", "Total"
-  originalFee    Decimal?   @map("original_fee") @db.Decimal(10, 2)
-  fee            Decimal?   @db.Decimal(10, 2)
-  applicationFee Decimal?   @map("application_fee") @db.Decimal(10, 2)
-  intakeMonth    String?    @map("intake_month") // e.g., "Sep, Jan"
-  commission     String?    // e.g., "1000 USD" or "10%"
-  
-  universityId   String     @map("university_id")
-  university     University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-
-  createdAt      DateTime   @default(now()) @map("created_at")
-
-  @@map("courses")
 }

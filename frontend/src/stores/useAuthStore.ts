@@ -24,9 +24,9 @@ interface AuthState {
 
 // Token and session helpers
 const setAuthToken = (token: string) => {
-  document.cookie = `auth-token=${encodeURIComponent(
-    token
-  )}; path=/; max-age=${60 * 60 * 24 * 7}; secure; samesite=strict`;
+  document.cookie = `auth-token=${encodeURIComponent(token)}; path=/; max-age=${
+    60 * 60 * 24 * 7
+  }; secure; samesite=strict`;
 };
 
 const getAuthToken = (): string | null => {
@@ -43,7 +43,8 @@ const getAuthToken = (): string | null => {
 };
 
 const clearAuthToken = () => {
-  document.cookie = "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+  document.cookie =
+    "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
 };
 
 const setPartnerCookie = (user: AuthUser) => {
@@ -91,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Try to restore from cookies
     const token = getAuthToken();
     const partnerUser = getPartnerCookie();
-    
+
     if (token && partnerUser) {
       set({
         isAuthenticated: true,
@@ -114,14 +115,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       // Backend returns { access_token, partner: { id, name, role, email } }
       const response = await api.AuthAPI.login(email, password);
-      const { access_token, partner } = response;
-
+      const { access_token, payload } = response;
       const partnerUser: AuthUser = {
-        id: partner.id,
-        email: partner.email,
-        name: partner.name,
+        id: payload?.id ?? "",
+        email: payload?.email ?? "",
+        name: payload?.name ?? "",
         type: "partner",
-        role: partner.role,
+        role: payload?.role ?? "",
       };
 
       // Store token and user info in cookies

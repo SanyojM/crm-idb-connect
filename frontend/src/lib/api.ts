@@ -313,6 +313,73 @@ export const CoursesAPI = {
   },
 };
 
+// --- Announcements ---
+export const AnnouncementsAPI = {
+  // GET /announcements?target_audience=user|branch&branch_id=...
+  fetchAnnouncements: async (params?: { target_audience?: string; branch_id?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.target_audience) query.append("target_audience", params.target_audience);
+    if (params?.branch_id) query.append("branch_id", params.branch_id);
+
+    const url = query.toString()
+      ? `${API_BASE}/announcements?${query.toString()}`
+      : `${API_BASE}/announcements`;
+
+    const res = await fetch(url, {
+      headers: getHeaders(),
+    });
+
+    return handleResponse(res);
+  },
+
+  // POST /announcements  (Admin only)
+  createAnnouncement: async (payload: any) => {
+    const res = await fetch(`${API_BASE}/announcements`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
+  // PATCH /announcements/:id  (Admin only)
+  updateAnnouncement: async (id: string, updates: any) => {
+    const res = await fetch(`${API_BASE}/announcements/${id}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(updates),
+    });
+    return handleResponse(res);
+  },
+
+  // DELETE /announcements/:id  (Admin only)
+  deleteAnnouncement: async (id: string) => {
+    const res = await fetch(`${API_BASE}/announcements/${id}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  // POST /announcements/:id/mark-read
+  markRead: async (id: string) => {
+    const res = await fetch(`${API_BASE}/announcements/${id}/mark-read`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  // GET /announcements/unread-count
+  getUnreadCount: async () => {
+    const res = await fetch(`${API_BASE}/announcements/unread-count`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
+  },
+};
+
+
 export default {
   LeadsAPI,
   PartnersAPI,
@@ -325,4 +392,5 @@ export default {
   CountriesAPI,
   UniversitiesAPI,
   CoursesAPI,
+  AnnouncementsAPI,
 };
