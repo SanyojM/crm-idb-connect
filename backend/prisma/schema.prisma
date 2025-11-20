@@ -177,11 +177,9 @@ model leads {
   name                                 String
   email                                String             @unique
   mobile                               String             @unique
-  alternate_mobile                     String?
   type                                 String
-  city                                 String
-  purpose                              String
-  preferred_country                    String?
+  preferred_country                    String
+  preferred_course                     String?
   status                               String
   utm_source                           String?
   utm_medium                           String?

@@ -66,66 +66,95 @@ All routes are relative to the NestJS server URL (e.g., `http://localhost:3000`)
 
 ## 👨‍💼 Leads API
 
-### Create a New Lead
+This module handles lead creation, management, and bulk operations.
+
+### Create a New Lead (Public/Internal)
+
 -   **Route:** `POST /leads`
 -   **Authentication:** **None (Public)**
--   **Description:**
-    1.  Validates unique `email` and `mobile`.
-    2.  Generates a random plaintext password.
-    3.  Hashes password and saves lead.
-    4.  **Side-effect:** Sends welcome email with plaintext password.
-    5.  **Side-effect:** Logs `LEAD_CREATED` to Timeline.
+-   **Description:** Creates a new lead. This endpoint is used by both public inquiry forms and internal panels.
+    1.  **Duplicate Check:** Validates that `email` and `mobile` do not already exist.
+    2.  **Password Generation:** Generates a random **plaintext** password.
+    3.  **Security:** Hashes the password and saves the hashed version to the database.
+    4.  **Defaults:** Sets `status='new'`, `type='lead'`, and `is_flagged=false` if not provided.
+    5.  **Async Side-effect:** Triggers `MailService` to send the **plaintext** password to the lead's email.
+    6.  **Async Side-effect:** Logs `LEAD_CREATED` to the Timeline.
+
 -   **Request Body:**
+    *Note: `city`, `purpose`, and `alternate_mobile` have been removed in favor of `preferred_course`.*
     ```json
     {
-      "name": "John Doe",
-      "mobile": "9876543210",
-      "email": "john@example.com",
-      "type": "lead",
-      "city": "New York",
-      "purpose": "Study Abroad",
-      "status": "new",
-      "created_by": "partner-uuid"
+      // --- 5 Core Inquiry Fields ---
+      "name": "John Doe",                // Required
+      "mobile": "9876543210",            // Required, Unique
+      "email": "john@example.com",       // Required, Unique
+      "preferred_course": "Bachelors in CS", // Required (Replaces 'purpose')
+      "preferred_country": "Finland",    // Optional
+
+      // --- Optional / Internal Fields ---
+      "utm_source": "Instagram",         // Optional tracking
+      "created_by": "uuid-of-partner",   // Required for internal creation (Admin/Agent)
+      "status": "new"                    // Optional (Defaults to 'new')
     }
     ```
+
+-   **Returns:** The newly created lead object (including the generated ID).
+    ```json
+    {
+      "id": "uuid-1234...",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "status": "new",
+      "created_at": "2025-11-20T..."
+      // ... other fields
+    }
+    ```
+
+-   **Errors:**
+    -   `409 Conflict`: Lead with this email or mobile already exists.
+    -   `500 Internal Server Error`: Database insertion failed.
 
 ### Get All Leads
 -   **Route:** `GET /leads`
 -   **Authentication:** **JWT Required**
--   **Description:** Retrieves all leads, ordered by newest first. Includes `partners_leads_assigned_toTopartners` object (name, email).
+-   **Description:** Retrieves all leads, ordered by newest first. Includes `assigned_partner` object (name, email).
 
 ### Get Single Lead
 -   **Route:** `GET /leads/:id`
 -   **Authentication:** **JWT Required**
 -   **Description:** Retrieves a single lead by ID.
--   **Validation:** `id` must be valid UUID (32 or 36 chars).
+-   **Validation:** `id` must be a valid UUID (32 or 36 chars).
 
 ### Update Lead
 -   **Route:** `PATCH /leads/:id`
 -   **Authentication:** **JWT Required**
 -   **Description:** Updates specific fields.
--   **Returns:** The full updated lead object (including assigned partner details if fetched).
+-   **Request Body:** (Partial lead object)
+    ```json
+    {
+      "status": "contacted",
+      "reason": "Called but no answer",
+      "assigned_to": "counsellor-uuid"
+    }
+    ```
 -   **Side-effects:**
-    -   Status change logs `LEAD_STATUS_CHANGED`.
-    -   Assignment change logs `LEAD_OWNER_CHANGED`.
+    -   Updating `status` logs `LEAD_STATUS_CHANGED` in Timeline.
+    -   Updating `assigned_to` logs `LEAD_OWNER_CHANGED` in Timeline.
 
 ### Delete Lead
 -   **Route:** `DELETE /leads/:id`
 -   **Authentication:** **JWT Required (Admin Only)**
+-   **Description:** Permanently removes a lead and its associated timeline/notes.
 
-### Bulk Actions
+### Bulk Actions (Admin/Counsellor)
 -   **Bulk Assign:** `POST /leads/bulk/assign`
-    -   **Auth:** Admin, Counsellor
-    -   **Body:** `{ "leadIds": ["uuid"], "counsellorId": "uuid" }`
+    -   **Body:** `{ "leadIds": ["uuid-1", "uuid-2"], "counsellorId": "uuid" }`
 -   **Bulk Status:** `POST /leads/bulk/status`
-    -   **Auth:** Admin, Counsellor
-    -   **Body:** `{ "leadIds": ["uuid"], "status": "cold", "reason": "..." }`
+    -   **Body:** `{ "leadIds": ["uuid-1"], "status": "cold", "reason": "..." }`
 -   **Bulk Message:** `POST /leads/bulk/message`
-    -   **Auth:** Admin, Counsellor (Agents may be allowed depending on configuration).
-    -   **Body:** `{ "leadIds": ["uuid"], "message": "Hello!" }`
--   **Bulk Delete:** `POST /leads/bulk/delete`
-    -   **Auth:** **Admin Only**
-    -   **Body:** `{ "leadIds": ["uuid"] }`
+    -   **Body:** `{ "leadIds": ["uuid-1"], "message": "Hello!" }`
+-   **Bulk Delete:** `POST /leads/bulk/delete` (**Admin Only**)
+    -   **Body:** `{ "leadIds": ["uuid-1", "uuid-2"] }`
 
 ---
 

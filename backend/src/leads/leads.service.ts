@@ -1,9 +1,9 @@
 import {
-    Injectable,
-    ConflictException,
-    InternalServerErrorException,
-    BadRequestException,
-    NotFoundException,
+  Injectable,
+  ConflictException,
+  InternalServerErrorException,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -16,17 +16,105 @@ import {
 } from './dto/bulk-update.dto';
 import { Prisma } from '../../generated/prisma/client';
 import { TimelineService } from '../timeline/timeline.service';
+import * as bcrypt from 'bcrypt';
 
 
 @Injectable()
 export class LeadsService {
-    constructor(
-        private prisma: PrismaService,
-        private mailService: MailService,
-        private timelineService: TimelineService,
-    ) { }
+  constructor(
+    private prisma: PrismaService,
+    private mailService: MailService,
+    private timelineService: TimelineService,
+  ) { }
 
-    async bulkAssign(bulkAssignDto: BulkAssignDto, user: any) {
+  private generateRandomPassword(length = 8): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
+  }
+
+  async create(createLeadDto: CreateLeadDto) {
+    const { email, mobile } = createLeadDto;
+
+    // 1. Check for duplicates
+    const existingLead = await this.prisma.leads.findFirst({
+      where: {
+        OR: [{ email }, { mobile }],
+      },
+    });
+
+    if (existingLead) {
+      throw new ConflictException('Lead with this email or mobile already exists.');
+    }
+
+    // 2. Generate Password
+    const password = this.generateRandomPassword();
+    const hashedPassword = await this.hashPassword(password);
+
+    try {
+      // 3. Create Lead - EXPLICIT MAPPING
+      // We map every field manually to ensure data integrity
+      const newLead = await this.prisma.leads.create({
+        data: {
+          // --- A. The 5 Core Fields (From Form) ---
+          name: createLeadDto.name,
+          email: createLeadDto.email,
+          mobile: createLeadDto.mobile,
+          preferred_course: createLeadDto.preferred_course,
+          preferred_country: createLeadDto.preferred_country,
+
+          // --- B. System/Security Defaults ---
+          password: hashedPassword,
+          is_flagged: false,
+          created_at: new Date(),
+          status: createLeadDto.status || 'new',
+          type: createLeadDto.type || 'lead',
+
+          created_by: createLeadDto.created_by || null,
+          assigned_to: createLeadDto.assigned_to || null,
+
+          // --- D. Tracking Fields ---
+          utm_source: createLeadDto.utm_source || null,
+          utm_medium: createLeadDto.utm_medium || null,
+          utm_campaign: createLeadDto.utm_campaign || null,
+
+          // --- E. Unused/Future Fields ---
+          reason: null,
+        },
+      });
+
+      // 4. Send Welcome Email
+      await this.mailService.sendWelcomeEmail(email, password);
+
+      // 5. Log Timeline
+      await this.timelineService.logLeadCreated(newLead);
+
+      return newLead;
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('Lead with this email or mobile already exists.');
+        }
+        // P2003 is foreign key constraint failed (e.g., invalid created_by UUID)
+        if (error.code === 'P2003') {
+          // Log specifically which field failed if needed
+          throw new InternalServerErrorException('Invalid Partner ID provided for created_by or assigned_to');
+        }
+      }
+      throw new InternalServerErrorException('Failed to create lead');
+    }
+  }
+
+  async bulkAssign(bulkAssignDto: BulkAssignDto, user: any) {
     const { leadIds, counsellorId } = bulkAssignDto;
 
     // Optional: Check if counsellorId is valid
@@ -61,8 +149,8 @@ export class LeadsService {
 
     // 2. Log events for each lead (async, don't await loop to return fast)
     leadIds.forEach(async (leadId) => {
-       // Ideally fetch old status first for accuracy, but for bulk we can just log the new status
-       await this.timelineService.logStatusChange(leadId, user.id, 'Previous', status);
+      // Ideally fetch old status first for accuracy, but for bulk we can just log the new status
+      await this.timelineService.logStatusChange(leadId, user.id, 'Previous', status);
     });
 
     return result;
@@ -95,9 +183,9 @@ export class LeadsService {
         //   from: process.env.TWILIO_NUMBER,
         //   body: message,
         // });
-        
+
         // TODO: Log a timeline event for each message sent
-        
+
         successCount++;
       } catch (error) {
         console.error(`Failed to send message to lead ${lead.id}:`, error);
@@ -112,133 +200,57 @@ export class LeadsService {
     };
   }
 
-    private generateRandomPassword(length = 8): string {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-        let password = '';
-        for (let i = 0; i < length; i++) {
-            password += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return password;
+  async findAll() {
+    // Replaces fetchLeads() (FIX: changed .lead to .leads)
+    return this.prisma.leads.findMany({
+      where: { type: 'lead' },
+      include: {
+        // Use the relation name from your schema
+        partners_leads_assigned_toTopartners: {
+          select: { name: true, email: true },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async findOne(id: string) {
+    if (typeof id !== 'string' || (id.length !== 36 && id.length !== 32)) {
+      throw new BadRequestException('Invalid id: incorrect UUID length');
     }
 
-    async create(createLeadDto: CreateLeadDto) {
-        const { email, mobile } = createLeadDto;
+    try {
+      const lead = await this.prisma.leads.findUnique({
+        where: { id },
+        include: {
+          // Use the relation name from your schema
+          partners_leads_assigned_toTopartners: { select: { name: true, email: true } },
+        },
+      });
 
+      if (!lead) {
+        throw new NotFoundException(`Lead not found for id: ${id}`);
+      }
 
-        const existingLead = await this.prisma.leads.findFirst({
-            where: {
-                OR: [{ email }, { mobile }],
-            },
-        });
-
-        if (existingLead) {
-            throw new ConflictException('Lead with this email or mobile already exists.');
-        }
-
-        // 2. Generate Password
-        const password = this.generateRandomPassword();
-
-        // 3. Create Lead in DB (FIX: changed .lead to .leads)
-        try {
-            // Prisma schema uses snake_case for relations, so we map DTO fields
-            const dataToCreate: Prisma.leadsCreateInput = {
-                name: createLeadDto.name,
-                mobile: createLeadDto.mobile,
-                email: createLeadDto.email,
-                type: createLeadDto.type,
-                city: createLeadDto.city,
-                purpose: createLeadDto.purpose,
-                status: createLeadDto.status,
-                alternate_mobile: createLeadDto.alternate_mobile,
-                preferred_country: createLeadDto.preferred_country,
-                utm_source: createLeadDto.utm_source,
-                utm_medium: createLeadDto.utm_medium,
-                utm_campaign: createLeadDto.utm_campaign,
-                reason: createLeadDto.reason,
-                password: password, // Save the generated password
-                is_flagged: false,
-                created_at: new Date(),
-                // Handle relations using 'connect'
-                partners_leads_created_byTopartners: createLeadDto.created_by
-                    ? { connect: { id: createLeadDto.created_by } }
-                    : undefined,
-                partners_leads_assigned_toTopartners: createLeadDto.assigned_to
-                    ? { connect: { id: createLeadDto.assigned_to } }
-                    : undefined,
-            };
-
-            const newLead = await this.prisma.leads.create({
-                data: dataToCreate,
-            });
-
-            // 4. Send Welcome Email (Async)
-            await this.mailService.sendWelcomeEmail(email, password);
-
-            await this.timelineService.logLeadCreated(newLead);
-
-            return newLead;
-        } catch (error) {
-            console.error(error);
-            if (error instanceof Prisma.PrismaClientKnownRequestError) {
-                if (error.code === 'P2002') { // Unique constraint violation
-                    throw new ConflictException('Lead with this email or mobile already exists.');
-                }
-            }
-            throw new InternalServerErrorException('Failed to create lead');
-        }
+      return lead;
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new Error('')
+      }
+      throw new InternalServerErrorException('Failed to retrieve lead');
     }
+  }
 
-    async findAll() {
-        // Replaces fetchLeads() (FIX: changed .lead to .leads)
-        return this.prisma.leads.findMany({
-            where: { type: 'lead' },
-            include: {
-                // Use the relation name from your schema
-                partners_leads_assigned_toTopartners: {
-                    select: { name: true, email: true },
-                },
-            },
-            orderBy: { created_at: 'desc' },
-        });
-    }
+  async update(id: string, updateLeadDto: Prisma.leadsUpdateInput) {
+    // Replaces updateLead() (FIX: changed .lead to .leads)
+    return this.prisma.leads.update({
+      where: { id },
+      data: updateLeadDto,
+    });
+  }
 
-    async findOne(id: string) {
-        if (typeof id !== 'string' || (id.length !== 36 && id.length !== 32)) {
-            throw new BadRequestException('Invalid id: incorrect UUID length');
-        }
-
-        try {
-            const lead = await this.prisma.leads.findUnique({
-                where: { id },
-                include: {
-                    // Use the relation name from your schema
-                    partners_leads_assigned_toTopartners: { select: { name: true, email: true } },
-                },
-            });
-
-            if (!lead) {
-                throw new NotFoundException(`Lead not found for id: ${id}`);
-            }
-
-            return lead;
-        } catch (error) {
-            console.error(error);
-            if (error instanceof Prisma.PrismaClientKnownRequestError) {
-                throw new Error('')
-            }
-            throw new InternalServerErrorException('Failed to retrieve lead');
-        }
-    }
-
-    async update(id: string, updateLeadDto: Prisma.leadsUpdateInput) {
-        // Replaces updateLead() (FIX: changed .lead to .leads)
-        return this.prisma.leads.update({
-            where: { id },
-            data: updateLeadDto,
-        });
-    }
-
-    async remove(id: string) {
+  async remove(id: string) {
     try {
       await this.prisma.leads.delete({
         where: { id },
