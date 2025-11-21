@@ -39,6 +39,7 @@ import { StorageModule } from './storage/storage.module';
     UniversitiesModule,
     TimelineModule,
     AnnouncementsModule,
+    StorageModule
   ],
   controllers: [AppController],
   providers: [AppService],
