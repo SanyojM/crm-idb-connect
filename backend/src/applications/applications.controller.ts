@@ -2,17 +2,13 @@
 import { Controller, Get, Patch, Body, Param, UseGuards, 
   UseInterceptors, UploadedFiles } from '@nestjs/common';
 import {
-  UpdatePersonalDetailsDto,
-  UpdateEducationDto,
-  UpdatePreferencesDto,
-  UpdateTestsDto,
-  UpdateWorkExperienceDto,
-  UpdateVisaDetailsDto,
-  UpdateDocumentsDto,
+  UpdatePersonalDetailsDto, UpdateEducationDto, UpdatePreferencesDto,
+  UpdateTestsDto, UpdateWorkExperienceDto, UpdateVisaDetailsDto,
 } from './dto/update-sections.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApplicationsService } from './applications.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { GetUser } from '../auth/get-user.decorator'; // <--- IMPORT THIS
 
 @UseGuards(JwtAuthGuard)
 @Controller('applications')
@@ -20,38 +16,38 @@ export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
   @Get(':leadId')
-  getOne(@Param('leadId') leadId: string) {
-    return this.applicationsService.getFullApplication(leadId);
+  getOne(@Param('leadId') leadId: string, @GetUser() user: any) {
+    return this.applicationsService.getFullApplication(leadId, user);
   }
 
   @Patch(':leadId/personal')
-  updatePersonal(@Param('leadId') leadId: string, @Body() dto: UpdatePersonalDetailsDto) {
-    return this.applicationsService.updatePersonalDetails(leadId, dto);
+  updatePersonal(@Param('leadId') leadId: string, @Body() dto: UpdatePersonalDetailsDto, @GetUser() user: any) {
+    return this.applicationsService.updatePersonalDetails(leadId, dto, user);
   }
 
   @Patch(':leadId/education')
-  updateEducation(@Param('leadId') leadId: string, @Body() dto: UpdateEducationDto) {
-    return this.applicationsService.updateEducation(leadId, dto);
+  updateEducation(@Param('leadId') leadId: string, @Body() dto: UpdateEducationDto, @GetUser() user: any) {
+    return this.applicationsService.updateEducation(leadId, dto, user);
   }
 
   @Patch(':leadId/preferences')
-  updatePreferences(@Param('leadId') leadId: string, @Body() dto: UpdatePreferencesDto) {
-    return this.applicationsService.updatePreferences(leadId, dto);
+  updatePreferences(@Param('leadId') leadId: string, @Body() dto: UpdatePreferencesDto, @GetUser() user: any) {
+    return this.applicationsService.updatePreferences(leadId, dto, user);
   }
 
   @Patch(':leadId/tests')
-  updateTests(@Param('leadId') leadId: string, @Body() dto: UpdateTestsDto) {
-    return this.applicationsService.updateTests(leadId, dto);
+  updateTests(@Param('leadId') leadId: string, @Body() dto: UpdateTestsDto, @GetUser() user: any) {
+    return this.applicationsService.updateTests(leadId, dto, user);
   }
 
   @Patch(':leadId/work-experience')
-  updateWorkExperience(@Param('leadId') leadId: string, @Body() dto: UpdateWorkExperienceDto) {
-    return this.applicationsService.updateWorkExperience(leadId, dto);
+  updateWorkExperience(@Param('leadId') leadId: string, @Body() dto: UpdateWorkExperienceDto, @GetUser() user: any) {
+    return this.applicationsService.updateWorkExperience(leadId, dto, user);
   }
 
   @Patch(':leadId/visa')
-  updateVisa(@Param('leadId') leadId: string, @Body() dto: UpdateVisaDetailsDto) {
-    return this.applicationsService.updateVisaDetails(leadId, dto);
+  updateVisa(@Param('leadId') leadId: string, @Body() dto: UpdateVisaDetailsDto, @GetUser() user: any) {
+    return this.applicationsService.updateVisaDetails(leadId, dto, user);
   }
 
   @Patch(':leadId/documents')
@@ -70,20 +66,9 @@ export class ApplicationsController {
   )
   updateDocuments(
     @Param('leadId') leadId: string,
-    @UploadedFiles()
-    files: {
-      profile_photo?: Express.Multer.File[];
-      passport_copy?: Express.Multer.File[];
-      academic_documents?: Express.Multer.File[];
-      english_test_cert?: Express.Multer.File[];
-      sop?: Express.Multer.File[];
-      cv_resume?: Express.Multer.File[];
-      recommendation_letters?: Express.Multer.File[];
-      financial_documents?: Express.Multer.File[];
-      other_documents?: Express.Multer.File[];
-    },
+    @UploadedFiles() files: any,
+    @GetUser() user: any, // <--- Inject User
   ) {
-    // We pass the files object directly to the service
-    return this.applicationsService.updateDocuments(leadId, files);
+    return this.applicationsService.updateDocuments(leadId, files, user);
   }
 }

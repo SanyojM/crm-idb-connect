@@ -1,46 +1,53 @@
 // src/offline-payments/offline-payments.service.ts
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOfflinePaymentDto } from './dto/create-offline-payment.dto';
 import { UpdateOfflinePaymentDto } from './dto/update-offline-payment.dto';
 import { SupabaseService } from '../storage/supabase.service';
+import { getScope } from '../common/utils/scope.util'; // <--- IMPORT
 
 @Injectable()
 export class OfflinePaymentsService {
   constructor(private prisma: PrismaService, private supabaseService: SupabaseService) { }
-  // Create a new offline payment
-  async create(createDto: CreateOfflinePaymentDto, userId: string, file?: Express.Multer.File) {
+
+  // 1. Update Create to check Lead Access
+  async create(createDto: CreateOfflinePaymentDto, userId: string, file: Express.Multer.File | undefined, user: any) {
+    // A. Check Receiver logic (existing)
     if (createDto.receiver) {
       const receiver = await this.prisma.partners.findUnique({
         where: { id: createDto.receiver },
-        include: { role: true }, // Fetch the Relation
+        include: { role: true },
       });
-
-      if (!receiver) {
-        throw new NotFoundException('Receiver partner not found');
-      }
-
-      // Access role.name instead of role directly
+      if (!receiver) throw new NotFoundException('Receiver partner not found');
       if (receiver.role?.name === 'agent') {
         throw new BadRequestException('Receiver cannot be an agent for offline payments');
       }
     }
-    // ---------------------------------------------------
 
+    // B. SECURITY: Check if User can access this Lead
+    if (createDto.lead_id) {
+      const scope = getScope(user);
+      const lead = await this.prisma.leads.findFirst({
+        where: { id: createDto.lead_id, ...scope }
+      });
+      if (!lead) throw new ForbiddenException('You do not have access to this Lead.');
+    }
+
+    // C. Upload File
     let fileUrl = createDto.file; 
     if (file) {
-      // ⚡ HERE: We specify 'payment-slips' as the bucket name
       fileUrl = await this.supabaseService.uploadFile(
         file, 
-        'idb-offline-payments',  // <--- Bucket Name
-        createDto.lead_id ? `leads/${createDto.lead_id}` : 'general' // Folder path
+        'idb-offline-payments',
+        createDto.lead_id ? `leads/${createDto.lead_id}` : 'general'
       );
     }
 
+    // D. Create Payment
     const payment = await this.prisma.offline_payments.create({
       data: {
         ...createDto,
-        file: fileUrl, // Save the Supabase URL
+        file: fileUrl,
       },
       include: {
         leads: { select: { name: true } },
@@ -48,7 +55,7 @@ export class OfflinePaymentsService {
       },
     });
 
-    // Log timeline event
+    // E. Log Timeline
     if (payment.lead_id) {
       await this.prisma.timeline.create({
         data: {
@@ -63,8 +70,16 @@ export class OfflinePaymentsService {
     return payment;
   }
 
-  // Fetch payments by lead ID
-  async findByLeadId(leadId: string) {
+  // 2. Find By Lead ID (Secured)
+  async findByLeadId(leadId: string, user: any) {
+    const scope = getScope(user);
+    
+    // Verify Lead Access First
+    const lead = await this.prisma.leads.findFirst({
+      where: { id: leadId, ...scope }
+    });
+    if (!lead) throw new ForbiddenException('You do not have access to this Lead.');
+
     return this.prisma.offline_payments.findMany({
       where: { lead_id: leadId },
       include: {
@@ -75,8 +90,13 @@ export class OfflinePaymentsService {
     });
   }
 
-  // Fetch payments by receiver (partner ID)
-  async findByReceiver(receiverId: string) {
+  // 3. Find By Receiver (Secured)
+  async findByReceiver(receiverId: string, user: any) {
+    // Users can see their own payments, Admins can see anyone's
+    if (user.role !== 'admin' && user.id !== receiverId) {
+      throw new ForbiddenException('You can only view your own received payments.');
+    }
+
     return this.prisma.offline_payments.findMany({
       where: { receiver: receiverId },
       include: {
@@ -87,7 +107,6 @@ export class OfflinePaymentsService {
     });
   }
 
-  // Update an existing payment
   async update(id: string, updateDto: UpdateOfflinePaymentDto) {
     return this.prisma.offline_payments.update({
       where: { id },
@@ -99,20 +118,15 @@ export class OfflinePaymentsService {
     });
   }
 
-  // Delete a payment
   async delete(id: string, userId?: string) {
     const payment = await this.prisma.offline_payments.findUnique({
       where: { id },
       select: { id: true, lead_id: true, amount: true, currency: true, file: true },
     });
 
-    if (!payment) {
-      throw new NotFoundException('Payment not found');
-    }
+    if (!payment) throw new NotFoundException('Payment not found');
 
-    await this.prisma.offline_payments.delete({
-      where: { id },
-    });
+    await this.prisma.offline_payments.delete({ where: { id } });
 
     if (payment.lead_id && userId) {
       await this.prisma.timeline.create({
@@ -125,9 +139,6 @@ export class OfflinePaymentsService {
       });
     }
 
-    return {
-      message: 'Payment deleted successfully',
-      fileUrl: payment.file,
-    };
+    return { message: 'Payment deleted successfully', fileUrl: payment.file };
   }
 }

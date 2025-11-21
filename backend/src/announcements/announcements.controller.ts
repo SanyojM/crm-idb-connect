@@ -1,14 +1,7 @@
+// src/announcements/announcements.controller.ts
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Request,
-  Query,
+  Controller, Get, Post, Body, Patch, Param, Delete,
+  UseGuards, Request, Query,
 } from '@nestjs/common';
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
@@ -24,23 +17,22 @@ export class AnnouncementsController {
   constructor(private readonly announcementsService: AnnouncementsService) {}
 
   @Post()
-  @Roles(Role.Admin) // Only admins can create announcements
+  @Roles(Role.Admin)
   create(@Body() createDto: CreateAnnouncementDto, @Request() req) {
-    return this.announcementsService.create(createDto, req.user.userId);
+    return this.announcementsService.create(createDto, req.user.id);
   }
 
   @Get()
   findAll(@Request() req, @Query('includeInactive') includeInactive?: string) {
     const includeInactiveBool = includeInactive === 'true';
-    return this.announcementsService.findAll(
-      req.user.userId,
-      includeInactiveBool
-    );
+    // Pass full user object for Branch Logic
+    return this.announcementsService.findAll(req.user, includeInactiveBool);
   }
 
   @Get('unread-count')
   getUnreadCount(@Request() req) {
-    return this.announcementsService.getUnreadCount(req.user.userId);
+    // Pass full user object for Branch Logic
+    return this.announcementsService.getUnreadCount(req.user);
   }
 
   @Get(':id')
@@ -62,6 +54,6 @@ export class AnnouncementsController {
 
   @Post(':id/mark-read')
   markAsRead(@Param('id') id: string, @Request() req) {
-    return this.announcementsService.markAsRead(id, req.user.userId);
+    return this.announcementsService.markAsRead(id, req.user.id);
   }
 }

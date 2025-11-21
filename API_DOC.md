@@ -10,7 +10,7 @@ This document provides a complete reference for all the APIs available in the ba
 Most endpoints are protected by **JWT Authentication**.
 -   **Public Endpoints:** `POST /auth/login` and `POST /leads`.
 -   **Protected Endpoints:** Require a valid Bearer Token in the Authorization header: `Authorization: Bearer <access_token>`.
--   **Role Based Access Control (RBAC):** Endpoints verify if the user has the required role (`admin`, `counsellor`, `agent`).
+-   **Role Based Access Control (RBAC):** Endpoints verify if the user has the required role (`admin`, `counsellor`, `agent`) or specific permissions.
 
 ### Base URL
 All routes are relative to the NestJS server URL (e.g., `http://localhost:3000`).
@@ -49,7 +49,7 @@ All routes are relative to the NestJS server URL (e.g., `http://localhost:3000`)
       "password": "password123"
     }
     ```
--   **Returns:** Includes both the token and the user's profile info.
+-   **Returns:** Includes the token, the user's profile info, and **branch context**.
     ```json
     {
       "access_token": "eyJhbGciOiJIUzI1Ni...",
@@ -57,10 +57,114 @@ All routes are relative to the NestJS server URL (e.g., `http://localhost:3000`)
         "id": "uuid",
         "name": "Admin User",
         "role": "admin",
-        "email": "admin@example.com"
+        "email": "admin@example.com",
+        "branch_id": "uuid-of-branch",      // Added
+        "branch_name": "Head Office",       // Added
+        "branch_type": "HeadOffice"         // Added
       }
     }
     ```
+
+---
+
+## 🏢 Branches API
+
+Manage office locations (Head Office, Regional, Local Branches).
+
+### Create Branch
+-   **Route:** `POST /branches`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Description:** Creates a new organizational branch.
+-   **Request Body:**
+    ```json
+    {
+      "name": "Delhi Branch",
+      "code": "DEL-001",
+      "type": "Branch", // Options: "HeadOffice", "Regional", "Branch"
+      "address": "Connaught Place, Delhi",
+      "phone": "011-23456789",
+      "parent_id": "uuid-of-regional-office" // Optional hierarchy
+    }
+    ```
+-   **Returns:** The newly created branch object.
+
+### Get All Branches
+-   **Route:** `GET /branches`
+-   **Authentication:** **JWT Required**
+-   **Description:** Returns all branches with their parent/children hierarchy structure. Used for dropdowns and organizational charts.
+
+### Get Single Branch
+-   **Route:** `GET /branches/:id`
+-   **Authentication:** **JWT Required**
+-   **Description:** Retrieves details of a specific branch.
+
+### Update Branch
+-   **Route:** `PATCH /branches/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Description:** Updates branch details.
+-   **Request Body:** Partial branch object.
+
+### Delete Branch
+-   **Route:** `DELETE /branches/:id`
+-   **Authentication:** **JWT Required (Admin Only)**
+-   **Description:** Deletes a branch.
+-   **Note:** Cannot delete a branch if it has active users or leads assigned to it.
+
+---
+
+## 🛡️ Permissions & Roles API
+
+System-level configuration for Role-Based Access Control (RBAC).
+
+### 1. Roles
+
+-   **Create Role:** `POST /roles`
+    -   **Auth:** Admin Only
+    -   **Body:** `{ "name": "SuperAdmin", "description": "Has full access" }`
+-   **Get All Roles:** `GET /roles`
+    -   **Auth:** Admin, Counsellor
+-   **Get Single Role:** `GET /roles/:id`
+    -   **Auth:** Admin, Counsellor
+-   **Update Role:** `PATCH /roles/:id`
+    -   **Auth:** Admin Only
+-   **Delete Role:** `DELETE /roles/:id`
+    -   **Auth:** Admin Only
+
+### 2. Permissions
+
+-   **Create Permission:** `POST /permissions`
+    -   **Auth:** Admin Only
+    -   **Body:** `{ "name": "leads.delete", "permission_group_id": "uuid" }`
+-   **Get All Permissions:** `GET /permissions`
+    -   **Auth:** Admin, Counsellor
+-   **Get Single Permission:** `GET /permissions/:id`
+    -   **Auth:** Admin, Counsellor
+-   **Update Permission:** `PATCH /permissions/:id`
+    -   **Auth:** Admin Only
+-   **Delete Permission:** `DELETE /permissions/:id`
+    -   **Auth:** Admin Only
+
+### 3. Permission Groups
+
+-   **Create Group:** `POST /permission-groups`
+    -   **Auth:** Admin Only
+    -   **Body:** `{ "name": "Leads Management" }`
+-   **Get All Groups:** `GET /permission-groups`
+    -   **Auth:** Admin, Counsellor
+-   **Update Group:** `PATCH /permission-groups/:id`
+    -   **Auth:** Admin Only
+-   **Delete Group:** `DELETE /permission-groups/:id`
+    -   **Auth:** Admin Only
+
+### 4. Role-Permission Assignments
+
+-   **Assign Permissions:** `POST /roles/assign-permissions`
+    -   **Auth:** Admin Only
+    -   **Body:** `{ "roleId": "uuid", "permissionIds": ["uuid1", "uuid2"] }`
+-   **Get Role Permissions:** `GET /roles/:id/permissions`
+    -   **Auth:** Admin, Counsellor
+-   **Remove Permission from Role:** `DELETE /roles/:roleId/permissions/:permissionId`
+    -   **Auth:** Admin Only
 
 ---
 
@@ -117,7 +221,7 @@ This module handles lead creation, management, and bulk operations.
 ### Get All Leads
 -   **Route:** `GET /leads`
 -   **Authentication:** **JWT Required**
--   **Description:** Retrieves all leads, ordered by newest first. Includes `assigned_partner` object (name, email).
+-   **Description:** Retrieves all leads, ordered by newest first. Includes `assigned_partner` object (name, email). **Important:** Results are scoped to the user's Branch.
 
 ### Get Single Lead
 -   **Route:** `GET /leads/:id`
@@ -177,7 +281,8 @@ This module handles lead creation, management, and bulk operations.
       "state": "NY",
       "area": "Manhattan",
       "zone": "East",
-      "agency_name": "Smith Agencies" // Optional
+      "agency_name": "Smith Agencies", // Optional
+      "branch_id": "uuid-of-branch"    // Optional: Admin can assign specific branch
     }
     ```
 -   **Returns:** Created partner object (excluding password), including the `role` object.
@@ -188,7 +293,7 @@ This module handles lead creation, management, and bulk operations.
 -   **Route:** `GET /partners`
 -   **Query Params:** `?role=agent` or `?role=counsellor` (Filters by Role Name)
 -   **Authentication:** **JWT Required**
--   **Returns:** Array of partner objects with nested role details.
+-   **Returns:** Array of partner objects with nested role details. **Scoped:** Admins see users in their branch hierarchy.
     ```json
     [
       {
@@ -270,6 +375,7 @@ This module handles lead creation, management, and bulk operations.
 * **Lead Driven:** All endpoints identify the application by the **`leadId`** (not the application ID).
 * **Upsert Logic:** If an application record does not exist for the given Lead ID, any `PATCH` request will automatically **create** it before updating the specific section.
 * **Returns:** All update endpoints return the **Full Application Object** (including all nested sections) after the update.
+* **Scope:** All updates require the user to have access to the specific `leadId` based on Branch Scope.
 
 ### 1. Get Full Application
 -   **Route:** `GET /applications/:leadId`
@@ -496,6 +602,7 @@ Manages manual payment records (Cash, Bank Transfer, etc.) and stores proof of p
 ### Get Dashboard Stats
 -   **Route:** `GET /dashboard/stats`
 -   **Authentication:** **JWT Required (Admin, Counsellor)**
+-   **Description:** Returns statistics **filtered by the user's branch**.
 -   **Returns:**
     ```json
     {
@@ -590,7 +697,7 @@ Manages universities linked to countries.
     ```json
     {
       "city": "Espoo",
-      "logo": "https://new-logo-url.com"
+      "logo": "[https://new-logo-url.com](https://new-logo-url.com)"
     }
     ```
 

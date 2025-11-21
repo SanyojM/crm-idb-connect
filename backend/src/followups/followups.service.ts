@@ -9,69 +9,60 @@ import { CreateFollowupDto } from './dto/create-followup.dto';
 import { UpdateFollowupDto } from './dto/update-followup.dto';
 import { CreateFollowupCommentDto } from './dto/create-comment.dto';
 import { UpdateFollowupCommentDto } from './dto/update-comment.dto';
-import { Role } from '../auth/roles.enum';
 import { TimelineService } from '../timeline/timeline.service';
+import { Role } from '../auth/roles.enum';
+import { getScope } from '../common/utils/scope.util'; // <--- IMPORT
 
 @Injectable()
 export class FollowupsService {
-  constructor(
-    private prisma: PrismaService,
-    private timelineService: TimelineService,
-    ) {}
+  constructor(private prisma: PrismaService, private timelineService: TimelineService) {}
 
-  // --- Followup Methods ---
-
-  async createFollowup(createFollowupDto: CreateFollowupDto, userId: string) {
+  async createFollowup(createFollowupDto: CreateFollowupDto, user: any) {
     const { lead_id, title, due_date } = createFollowupDto;
 
-    // Check if the lead exists
-    const lead = await this.prisma.leads.findUnique({ where: { id: lead_id } });
-    if (!lead) {
-      throw new NotFoundException(`Lead with ID ${lead_id} not found.`);
-    }
+    // 🔒 SECURITY: Check Lead Access
+    const scope = getScope(user);
+    const lead = await this.prisma.leads.findFirst({
+      where: { id: lead_id, ...scope }
+    });
+    if (!lead) throw new NotFoundException(`Lead not found or access denied.`);
 
     const followup = await this.prisma.followups.create({
       data: {
         title,
         lead_id,
         due_date,
-        created_by: userId,
+        created_by: user.id,
         completed: false,
         created_at: new Date(),
       },
     });
 
-    await this.timelineService.logFollowupAdded(followup, userId);
-
+    await this.timelineService.logFollowupAdded(followup, user.id);
     return followup;
   }
 
-  async findAllForLead(leadId: string) {
+  async findAllForLead(leadId: string, user: any) {
+    // 🔒 SECURITY: Check Lead Access
+    const scope = getScope(user);
+    const lead = await this.prisma.leads.findFirst({
+      where: { id: leadId, ...scope }
+    });
+    if (!lead) throw new NotFoundException(`Lead not found or access denied.`);
+
+    // ... (Rest of logic is same) ...
     const followups = await this.prisma.followups.findMany({
       where: { lead_id: leadId },
       include: {
-        // Include partner who created it
-        partners: {
-          select: { name: true },
-        },
-        // Include all comments for each followup
+        partners: { select: { name: true } },
         followup_comments: {
-          include: {
-            partners: {
-              select: { name: true },
-            },
-          },
-          orderBy: {
-            created_at: 'asc',
-          },
+          include: { partners: { select: { name: true } } },
+          orderBy: { created_at: 'asc' },
         },
       },
-      orderBy: {
-        created_at: 'desc',
-      },
+      orderBy: { created_at: 'desc' },
     });
 
-    // Convert BigInt comment IDs to strings
     return followups.map(followup => ({
       ...followup,
       followup_comments: followup.followup_comments.map(comment => ({

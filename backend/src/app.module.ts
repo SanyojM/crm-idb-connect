@@ -19,6 +19,7 @@ import { UniversitiesModule } from './universities/universities.module';
 import { TimelineModule } from './timeline/timeline.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { StorageModule } from './storage/storage.module';
+import { BranchesModule } from './branches/branches.module';
 
 @Module({
   imports: [
@@ -39,7 +40,8 @@ import { StorageModule } from './storage/storage.module';
     UniversitiesModule,
     TimelineModule,
     AnnouncementsModule,
-    StorageModule
+    StorageModule,
+    BranchesModule
   ],
   controllers: [AppController],
   providers: [AppService],

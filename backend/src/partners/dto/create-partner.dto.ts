@@ -39,4 +39,8 @@ export class CreatePartnerDto {
   @IsOptional()
   @IsString()
   agency_name?: string;
+
+  @IsUUID()
+  @IsOptional()
+  branch_id?: string;
 }

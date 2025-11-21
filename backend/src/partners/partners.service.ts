@@ -11,6 +11,7 @@ import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
 import * as bcrypt from 'bcrypt';
 import { BulkDeletePartnerDto } from './dto/bulk-delete.dto';
+import { getScope } from '../common/utils/scope.util'; // 1. Import Scope Utility
 
 @Injectable()
 export class PartnersService {
@@ -21,16 +22,15 @@ export class PartnersService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  async create(createPartnerDto: CreatePartnerDto) {
-    // 1. Verify the Role ID exists
+  // 2. Update Create: Accept 'user' to assign branch_id
+  async create(createPartnerDto: CreatePartnerDto, user: any) {
+    // Verify Role
     const roleExists = await this.prisma.role.findUnique({
       where: { id: createPartnerDto.role_id },
     });
-    if (!roleExists) {
-      throw new BadRequestException('Invalid Role ID provided');
-    }
+    if (!roleExists) throw new BadRequestException('Invalid Role ID provided');
 
-    // 2. Check for duplicate email or mobile
+    // Verify Duplicates
     const existingPartner = await this.prisma.partners.findFirst({
       where: {
         OR: [
@@ -39,12 +39,17 @@ export class PartnersService {
         ],
       },
     });
+    if (existingPartner) throw new ConflictException('Email or mobile already in use.');
 
-    if (existingPartner) {
-      throw new ConflictException('Email or mobile number already in use.');
+    let targetBranchId = user.branch_id;
+
+    // If Creator is "Head Office Admin", they can assign ANY branch
+    if (user.branch_type === 'HeadOffice' && user.role === 'admin') {
+      if (createPartnerDto.branch_id) {
+        targetBranchId = createPartnerDto.branch_id;
+      }
     }
 
-    // 3. Hash password and Create
     const hashedPassword = await this.hashPassword(createPartnerDto.password);
 
     try {
@@ -52,63 +57,49 @@ export class PartnersService {
         data: {
           ...createPartnerDto,
           password: hashedPassword,
+          branch_id: targetBranchId, // <--- AUTO-ASSIGN BRANCH
         },
-        include: {
-          role: true, // Include role details in return
-        },
+        include: { role: true, branch: true },
       });
 
       const { password, role, ...result } = newPartner;
-      return {
-        ...result,
-        role: role.name, // Return role name as string
-      };
+      return { ...result, role: role.name };
     } catch (error) {
       throw new InternalServerErrorException('Could not create partner.');
     }
   }
 
-  async findAll(roleName?: string) {
-    // Filter by related role name if provided
-    const whereClause = roleName ? { role: { name: roleName } } : {};
+  // 3. Update FindAll: Accept 'user' to apply Scope
+  async findAll(user: any, roleName?: string) {
+    const scope = getScope(user); // <--- GET SCOPE
+
+    const whereClause = {
+      ...scope, // Apply Branch Filter
+      ...(roleName ? { role: { name: roleName } } : {}),
+    };
 
     const partners = await this.prisma.partners.findMany({
       where: whereClause,
-      include: {
-        role: true,
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
+      include: { role: true, branch: true },
+      orderBy: { created_at: 'desc' },
     });
 
-    // Map to return role.name as string and exclude password
     return partners.map((partner) => {
       const { password, role, ...rest } = partner;
-      return {
-        ...rest,
-        role: role.name,
-      };
+      return { ...rest, role: role.name };
     });
   }
 
   async findOne(id: string) {
     const partner = await this.prisma.partners.findUnique({
       where: { id },
-      include: {
-        role: true, // Fetch role object
-      },
+      include: { role: true, branch: true },
     });
 
-    if (!partner) {
-      throw new NotFoundException(`Partner with ID ${id} not found.`);
-    }
+    if (!partner) throw new NotFoundException(`Partner with ID ${id} not found.`);
 
     const { password, role, ...result } = partner;
-    return {
-      ...result,
-      role: role.name, // Return role name as string
-    };
+    return { ...result, role: role.name };
   }
 
   async update(id: string, updatePartnerDto: UpdatePartnerDto) {
@@ -120,14 +111,11 @@ export class PartnersService {
       const updatedPartner = await this.prisma.partners.update({
         where: { id },
         data: updatePartnerDto,
-        include: { role: true }
+        include: { role: true, branch: true }
       });
 
       const { password, role, ...result } = updatedPartner;
-      return {
-        ...result,
-        role: role.name, // Return role name as string
-      };
+      return { ...result, role: role.name };
     } catch (error) {
       if (error.code === 'P2025') throw new NotFoundException(`Partner with ID ${id} not found.`);
       if (error.code === 'P2002') throw new ConflictException('Email or mobile number already in use.');
@@ -145,22 +133,20 @@ export class PartnersService {
   }
 
   async bulkRemove(dto: BulkDeletePartnerDto) {
-    await this.prisma.partners.deleteMany({
-      where: { id: { in: dto.partnerIds } },
-    });
+    await this.prisma.partners.deleteMany({ where: { id: { in: dto.partnerIds } } });
     return { message: `Partners deleted successfully.` };
   }
 
+  // 4. Critical: Ensure this includes 'branch' for the Auth Service
   async findOneByEmail(email: string) {
     return this.prisma.partners.findUnique({
       where: { email },
       include: {
+        branch: true, // <--- REQUIRED FOR AUTH
         role: {
           include: {
             role_permissions: {
-              include: {
-                permission: true
-              }
+              include: { permission: true }
             }
           }
         }

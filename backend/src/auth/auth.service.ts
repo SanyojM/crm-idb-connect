@@ -40,21 +40,32 @@ export class AuthService {
    * @returns An object containing the access_token and partner info
    */
   async login(partner: any) {
-    // Extract permissions from role_permissions
+    // Extract permissions
     const permissions = partner.role?.role_permissions?.map(
       (rp: any) => rp.permission.name
     ) || [];
 
+    // ⚠️ UPDATED PAYLOAD: Added branch_type for hierarchy logic
     const payload = {
       email: partner.email,
       sub: partner.id,
       name: partner.name,
       role: partner.role.name,
       permissions: permissions,
+      branch_id: partner.branch_id,     // <--- Existing
+      branch_type: partner.branch?.type // <--- CRITICAL NEW ADDITION
     };
+
     return {
       access_token: this.jwtService.sign(payload),
-      payload: payload
+      partner: {
+        id: partner.id,
+        name: partner.name,
+        email: partner.email,
+        role: partner.role.name,
+        branch_id: partner.branch_id,
+        branch_name: partner.branch?.name
+      },
     };
   }
 }

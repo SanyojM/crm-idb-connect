@@ -41,12 +41,14 @@ export class LeadsController {
   // GET /leads?assigned_to=userId&created_by=userId&type=lead
   @Get()
   findAll(
+    @GetUser() user: any, // <--- GET LOGGED IN USER
     @Query('assigned_to') assignedTo?: string,
     @Query('created_by') createdBy?: string,
     @Query('type') type?: string,
   ) {
-    return this.leadsService.findAll(assignedTo, createdBy, type);
-  }  
+    // Pass 'user' to the service
+    return this.leadsService.findAll(user, assignedTo, createdBy, type);
+  }
 
   // Get Single Lead
   @Get(':id')

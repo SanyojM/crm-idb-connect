@@ -32,16 +32,14 @@ export class FollowupsController {
     @Body() createFollowupDto: CreateFollowupDto,
     @GetUser() user: any,
   ) {
-    return this.followupsService.createFollowup(createFollowupDto, user.id);
+    // Pass full user object
+    return this.followupsService.createFollowup(createFollowupDto, user);
   }
 
-  /**
-   * Get all followups for a specific lead
-   * GET /leads/:leadId/followups
-   */
   @Get('leads/:leadId/followups')
-  findAllForLead(@Param('leadId') leadId: string) {
-    return this.followupsService.findAllForLead(leadId);
+  findAllForLead(@Param('leadId') leadId: string, @GetUser() user: any) {
+    // Pass full user object
+    return this.followupsService.findAllForLead(leadId, user);
   }
 
   /**

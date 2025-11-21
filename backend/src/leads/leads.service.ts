@@ -17,7 +17,7 @@ import {
 import { Prisma } from '../../generated/prisma/client';
 import { TimelineService } from '../timeline/timeline.service';
 import * as bcrypt from 'bcrypt';
-
+import { getScope } from '../common/utils/scope.util';
 
 @Injectable()
 export class LeadsService {
@@ -201,27 +201,20 @@ export class LeadsService {
     };
   }
 
-  async findAll(assignedTo?: string, createdBy?: string, type?: string) {
-    // Build where clause dynamically based on query parameters
-    const where: any = {};
+  async findAll(user: any, assignedTo?: string, createdBy?: string, type?: string) {
+    const scope = getScope(user); // <--- GENERATE FILTER
+
+    const where: any = {
+      ...scope, // <--- APPLY FILTER (e.g. { branch_id: "..." })
+      type: type || 'lead',
+    };
     
-    // Filter by type (default to 'lead' if not specified)
-    where.type = type || 'lead';
-    
-    // Filter by assigned_to if provided
-    if (assignedTo) {
-      where.assigned_to = assignedTo;
-    }
-    
-    // Filter by created_by if provided
-    if (createdBy) {
-      where.created_by = createdBy;
-    }
+    if (assignedTo) where.assigned_to = assignedTo;
+    if (createdBy) where.created_by = createdBy;
     
     return this.prisma.leads.findMany({
       where,
       include: {
-        // Use the relation name from your schema
         partners_leads_assigned_toTopartners: {
           select: { name: true, email: true },
         },

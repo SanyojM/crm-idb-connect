@@ -24,25 +24,24 @@ export class OfflinePaymentsController {
   constructor(private readonly offlinePaymentsService: OfflinePaymentsService) {}
 
   @Post('offline-payments')
-  @UseInterceptors(FileInterceptor('file')) // Intercept field named 'file'
+  @UseInterceptors(FileInterceptor('file'))
   create(
     @Body() createDto: CreateOfflinePaymentDto, 
     @Request() req,
-    @UploadedFile() file: Express.Multer.File // Catch the file
+    @UploadedFile() file: Express.Multer.File
   ) {
-    // Pass file to service
-    return this.offlinePaymentsService.create(createDto, req.user.userId, file);
+    // Pass req.user (which contains full user details) as the last argument
+    return this.offlinePaymentsService.create(createDto, req.user.userId, file, req.user);
   }
 
-  // ... (Rest of the controller remains unchanged)
   @Get('leads/:leadId/offline-payments')
-  findByLeadId(@Param('leadId') leadId: string) {
-    return this.offlinePaymentsService.findByLeadId(leadId);
+  findByLeadId(@Param('leadId') leadId: string, @Request() req) {
+    return this.offlinePaymentsService.findByLeadId(leadId, req.user);
   }
 
   @Get('partners/:receiverId/offline-payments')
-  findByReceiver(@Param('receiverId') receiverId: string) {
-    return this.offlinePaymentsService.findByReceiver(receiverId);
+  findByReceiver(@Param('receiverId') receiverId: string, @Request() req) {
+    return this.offlinePaymentsService.findByReceiver(receiverId, req.user);
   }
 
   @Patch('offline-payments/:id')

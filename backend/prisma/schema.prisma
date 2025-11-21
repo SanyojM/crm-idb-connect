@@ -1,5 +1,5 @@
 generator client {
-  provider     = "prisma-client"
+  provider     = "prisma-client-js"
   output       = "../generated/prisma"
   moduleFormat = "cjs"
 }
@@ -7,6 +7,30 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Branch {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  code        String    @unique // e.g., HO-001, DEL-SOUTH
+  type        String    // "HeadOffice", "Regional", "Branch"
+  address     String?
+  phone       String?
+  
+  // Hierarchy (Self-Relation)
+  parent_id   String?   @db.Uuid
+  parent      Branch?   @relation("BranchHierarchy", fields: [parent_id], references: [id])
+  children    Branch[]  @relation("BranchHierarchy")
+
+  // Relations (Scoped Data)
+  partners    partners[]
+  leads       leads[]
+  // Note: Applications/Payments don't need direct branch_id as they are linked to Leads
+  
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@map("branches")
 }
 
 model announcement_reads {
@@ -234,6 +258,9 @@ model leads {
   notes                                notes[]
   offline_payments                     offline_payments[]
   timeline                             timeline[]
+
+  branch_id   String?   @db.Uuid
+  branch      Branch?   @relation(fields: [branch_id], references: [id])
 }
 
 model notes {
@@ -288,6 +315,9 @@ model partners {
   notes                             notes[]
   offline_payments                  offline_payments[]
   timeline                          timeline[]
+
+  branch_id   String?   @db.Uuid
+  branch      Branch?   @relation(fields: [branch_id], references: [id])
 }
 
 model timeline {

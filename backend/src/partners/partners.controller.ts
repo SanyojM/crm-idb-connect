@@ -18,40 +18,44 @@ import { UpdatePartnerDto } from './dto/update-partner.dto';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // <--- ADDED THIS
 import { BulkDeletePartnerDto } from './dto/bulk-delete.dto';
 
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard) // <--- UPDATED THIS
 @Controller('partners')
 export class PartnersController {
   constructor(private readonly partnersService: PartnersService) {}
 
-  // POST /partners
   @Post()
-  @Roles(Role.Admin) // Only Admins can create partners
-  create(@Body() createPartnerDto: CreatePartnerDto) {
-    return this.partnersService.create(createPartnerDto);
+  @Roles(Role.Admin)
+  create(@Body() createPartnerDto: CreatePartnerDto, @Request() req) {
+    // Pass req.user so the service knows which branch to assign
+    return this.partnersService.create(createPartnerDto, req.user);
+  }
+
+  @Get()
+  @Roles(Role.Admin, Role.Counsellor)
+  findAll(
+    @Request() req, 
+    @Query('role') role?: string
+  ) {
+    // Pass req.user so the service filters by branch
+    return this.partnersService.findAll(req.user, role);
   }
 
   // GET /partners/me - Get current user's profile
   @Get('me')
   async getCurrentUser(@Request() req) {
-    return this.partnersService.findOne(req.user.id);
-  }
-
-  // GET /partners
-  // GET /partners?role=agent
-  // GET /partners?role=counsellor
-  @Get()
-  @Roles(Role.Admin, Role.Counsellor)
-  findAll(@Query('role') role?: 'agent' | 'counsellor' | 'admin') {
-    return this.partnersService.findAll(role);
+    return this.partnersService.findOne(req.user.userId); // Ensure usage of userId from JWT strategy
   }
 
   // GET /partners/:id
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req) {
     // Users can access their own data, or Admin/Counsellor can access any partner's data
-    if (req.user.id !== id && req.user.role !== Role.Admin && req.user.role !== Role.Counsellor) {
+    // Note: This currently checks ID ownership but not Branch Scope for Admins. 
+    // If you want strict Branch Scoping for findOne, the Service needs to be updated to accept `req.user` here too.
+    if (req.user.userId !== id && req.user.role !== Role.Admin && req.user.role !== Role.Counsellor) {
       throw new ForbiddenException('You can only access your own profile');
     }
     return this.partnersService.findOne(id);
