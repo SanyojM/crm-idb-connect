@@ -1,0 +1,463 @@
+generator client {
+  provider     = "prisma-client-js"
+  // output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Branch {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  code       String     @unique
+  type       String
+  address    String?
+  phone      String?
+  parent_id  String?    @db.Uuid
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at DateTime   @default(now()) @updatedAt @db.Timestamptz(6)
+  parent     Branch?    @relation("BranchHierarchy", fields: [parent_id], references: [id])
+  children   Branch[]   @relation("BranchHierarchy")
+  leads      leads[]
+  partners   partners[]
+
+  @@map("branches")
+}
+
+model announcement_reads {
+  id              String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  announcement_id String?        @db.Uuid
+  partner_id      String?        @db.Uuid
+  read_at         DateTime?      @default(now()) @db.Timestamptz(6)
+  announcements   announcements? @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  partners        partners?      @relation(fields: [partner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([announcement_id, partner_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model announcements {
+  id                 String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title              String
+  content            String
+  target_audience    String
+  users              String[]             @default([])
+  branch_id          String?
+  created_by         String?              @db.Uuid
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  is_active          Boolean?             @default(true)
+  announcement_reads announcement_reads[]
+  partners           partners?            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model application_documents {
+  id                         String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  application_id             String       @db.Uuid
+  profile_photo_url          String?
+  passport_copy_url          String?
+  academic_documents_urls    String[]     @default([])
+  english_test_cert_url      String?
+  sop_url                    String?
+  cv_resume_url              String?
+  recommendation_letters_url String[]     @default([])
+  financial_documents_url    String?
+  other_documents_url        String?
+  applications               applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+}
+
+model application_family_details {
+  id                       String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  application_id           String       @db.Uuid
+  father_name              String?
+  mother_name              String?
+  emergency_contact_name   String?
+  emergency_contact_number String?
+  applications             applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+}
+
+model application_preferences {
+  id                    String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  application_id        String       @db.Uuid
+  preferred_country     String?
+  preferred_course_type String?
+  preferred_course_name String?
+  preferred_intake      String?
+  preferred_university  String?
+  backup_country        String?
+  study_mode            String?
+  budget_range          String?
+  scholarship_interest  Boolean?
+  travel_history        String?
+  applications          applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+}
+
+model applications {
+  id                String                        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  lead_id           String                        @db.Uuid
+  student_id        String?                       @unique
+  given_name        String?
+  surname           String?
+  dob               DateTime?                     @db.Date
+  gender            String?
+  marital_status    String?
+  email             String?
+  phone             String?
+  alternate_phone   String?
+  address           String?
+  city              String?
+  state             String?
+  country           String?
+  citizenship       String?
+  national_id       String?
+  current_status    String?
+  gap_years         Int?
+  referral_source   String?
+  application_stage String?
+  system_remarks    String?
+  created_at        DateTime?                     @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?                     @default(now()) @updatedAt @db.Timestamptz(6)
+  documents         application_documents[]
+  education         application_education[]
+  family_details    application_family_details[]
+  preferences       application_preferences[]
+  tests             application_tests[]
+  visa_details      application_visa_details[]
+  work_experience   application_work_experience[]
+  leads             leads                         @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model application_education {
+  id                    String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  application_id        String       @db.Uuid
+  level                 String?
+  institution_name      String?
+  board_university      String?
+  country_of_study      String?
+  major_stream          String?
+  percentage_gpa        String?
+  year_of_passing       String?
+  medium_of_instruction String?
+  backlogs              Int?
+  certificate_url       String?
+  applications          applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+}
+
+model application_tests {
+  id             String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  application_id String       @db.Uuid
+  test_type      String?
+  test_date      DateTime?    @db.Date
+  overall_score  Decimal?     @db.Decimal(4, 1)
+  listening      Decimal?     @db.Decimal(4, 1)
+  reading        Decimal?     @db.Decimal(4, 1)
+  writing        Decimal?     @db.Decimal(4, 1)
+  speaking       Decimal?     @db.Decimal(4, 1)
+  trf_number     String?
+  applications   applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+}
+
+model application_work_experience {
+  id              String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  application_id  String       @db.Uuid
+  company_name    String?
+  designation     String?
+  start_date      DateTime?    @db.Date
+  end_date        DateTime?    @db.Date
+  job_duties      String?
+  certificate_url String?
+  applications    applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+}
+
+model application_visa_details {
+  id                      String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  application_id          String       @db.Uuid
+  passport_number         String?
+  passport_issue_date     DateTime?    @db.Date
+  passport_expiry_date    DateTime?    @db.Date
+  passport_place_of_issue String?
+  passport_nationality    String?
+  country_applied_for     String?
+  previous_visa_type      String?
+  visa_status             String?
+  visa_refusal_reason     String?
+  travelled_countries     String?
+  is_visa_rejected_past   Boolean?
+  applications            applications @relation(fields: [application_id], references: [id], onDelete: Cascade)
+}
+
+model followup_comments {
+  id          BigInt     @id @default(autoincrement())
+  created_at  DateTime   @default(now()) @db.Timestamptz(6)
+  text        String?
+  followup_id String?    @db.Uuid
+  created_by  String?    @db.Uuid
+  partners    partners?  @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  followups   followups? @relation(fields: [followup_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model followups {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at        DateTime            @db.Timestamptz(6)
+  title             String?
+  lead_id           String?             @db.Uuid
+  completed         Boolean?
+  created_by        String?             @db.Uuid
+  due_date          DateTime?           @db.Timestamptz(6)
+  followup_comments followup_comments[]
+  partners          partners?           @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  leads             leads?              @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model leads {
+  id                                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                                 String
+  email                                String             @unique
+  mobile                               String             @unique
+  type                                 String
+  preferred_country                    String
+  preferred_course                     String?
+  status                               String
+  utm_source                           String?
+  utm_medium                           String?
+  utm_campaign                         String?
+  assigned_to                          String?            @db.Uuid
+  created_at                           DateTime           @default(now()) @db.Timestamptz(6)
+  created_by                           String?            @db.Uuid
+  reason                               String?
+  password                             String?            @default("")
+  is_flagged                           Boolean            @default(false)
+  branch_id                            String?            @db.Uuid
+  applications                         applications[]
+  followups                            followups[]
+  partners_leads_assigned_toTopartners partners?          @relation("leads_assigned_toTopartners", fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  branch                               Branch?            @relation(fields: [branch_id], references: [id])
+  partners_leads_created_byTopartners  partners?          @relation("leads_created_byTopartners", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notes                                notes[]
+  offline_payments                     offline_payments[]
+  timeline                             timeline[]
+}
+
+model notes {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  text       String?
+  lead_id    String?   @db.Uuid
+  created_by String?   @db.Uuid
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  partners   partners? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  leads      leads?    @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model offline_payments {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  payment_mode String?
+  currency     String
+  amount       BigInt?
+  payment_type String
+  reference_id String?
+  receiver     String?   @db.Uuid
+  lead_id      String?   @db.Uuid
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  status       String?
+  file         String?
+  leads        leads?    @relation(fields: [lead_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  partners     partners? @relation(fields: [receiver], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model partners {
+  id                                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role_id                           String               @db.Uuid
+  name                              String
+  email                             String               @unique
+  mobile                            String               @unique
+  password                          String
+  address                           String
+  city                              String
+  state                             String
+  area                              String
+  zone                              String
+  remarks                           String?
+  agency_name                       String?
+  created_at                        DateTime             @default(now()) @db.Timestamptz(6)
+  branch_id                         String?              @db.Uuid
+  announcement_reads                announcement_reads[]
+  announcements                     announcements[]
+  followup_comments                 followup_comments[]
+  followups                         followups[]
+  leads_leads_assigned_toTopartners leads[]              @relation("leads_assigned_toTopartners")
+  leads_leads_created_byTopartners  leads[]              @relation("leads_created_byTopartners")
+  notes                             notes[]
+  offline_payments                  offline_payments[]
+  branch                            Branch?              @relation(fields: [branch_id], references: [id])
+  role                              role                 @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  timeline                          timeline[]
+  todos                             todos[]
+}
+
+model timeline {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id    String         @db.Uuid
+  event_type timeline_event
+  old_state  String?
+  new_state  String?
+  created_by String         @db.Uuid
+  created_at DateTime       @default(now()) @db.Timestamptz(6)
+  partners   partners       @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  leads      leads          @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_timeline_created_at")
+  @@index([created_by], map: "idx_timeline_created_by")
+  @@index([event_type], map: "idx_timeline_event_type")
+  @@index([lead_id], map: "idx_timeline_lead_id")
+}
+
+model permission_group {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @unique
+  permissions permission[]
+}
+
+model permission {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String            @unique
+  permission_group_id String?           @db.Uuid
+  permission_group    permission_group? @relation(fields: [permission_group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  role_permissions    role_permission[]
+}
+
+model role {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String            @unique
+  description      String?
+  partners         partners[]
+  role_permissions role_permission[]
+}
+
+model role_permission {
+  role_id       String     @db.Uuid
+  permission_id String     @db.Uuid
+  permission    permission @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  role          role       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([role_id, permission_id])
+}
+
+model Country {
+  id           String       @id @default(uuid())
+  name         String       @unique
+  flag         String?
+  universities University[]
+
+  @@map("countries")
+}
+
+model University {
+  id        String   @id @default(uuid())
+  name      String
+  logo      String?
+  city      String?
+  countryId String   @map("country_id")
+  courses   Course[]
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@map("universities")
+}
+
+model Course {
+  id                  String     @id @default(uuid())
+  name                String
+  description         String?
+  level               String?
+  category            String?
+  duration            Int?
+  feeType             String?    @map("fee_type")
+  originalFee         Decimal?   @map("original_fee") @db.Decimal(10, 2)
+  feeCurrency         String?    @default("PLN") @map("fee_currency")
+  fee                 Decimal?   @map("fee") @db.Decimal(10, 2)
+  courseCurrency      String?    @default("PLN") @map("course_currency")
+  applicationFee      Decimal?   @map("application_fee") @db.Decimal(10, 2)
+  applicationCurrency String?    @default("PLN") @map("application_currency")
+  intakeMonth         String?    @map("intake_month")
+  commissionType      String?    @default("%") @map("commission_type")
+  commissionValue     Decimal?   @map("commission_value") @db.Decimal(10, 2)
+  details             Json?
+  universityId        String     @map("university_id")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  university          University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@map("courses")
+}
+
+model todos {
+  id         String    @id
+  title      String
+  created_by String    @db.Uuid
+  completed  Boolean   @default(false)
+  dueDate    DateTime?
+  partners   partners  @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum academic_level_enum {
+  Class_Xth_SSC   @map("Class Xth/SSC")
+  Class_XIIth_HSC @map("Class XIIth/HSC")
+  Graduation
+  Post_Graduation @map("Post Graduation")
+}
+
+enum category_enum {
+  GENERAL
+  OBC
+  SC
+  ST
+  EWS
+}
+
+enum gender_enum {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum marital_status_enum {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum marking_scheme_enum {
+  PERCENTAGE
+  CGPA_OUT_OF_10 @map("CGPA OUT OF 10")
+  CGPA_OUT_OF_4  @map("CGPA OUT OF 4")
+}
+
+enum result_status_enum {
+  DECLARED
+  AWAITED
+}
+
+enum timeline_event {
+  LEAD_CREATED
+  LEAD_NAME_CHANGED
+  LEAD_PHONE_CHANGED
+  LEAD_EMAIL_CHANGED
+  LEAD_PURPOSE_CHANGED
+  LEAD_OWNER_CHANGED
+  LEAD_STATUS_CHANGED
+  LEAD_NOTE_ADDED
+  LEAD_NOTE_DELETED
+  LEAD_NOTE_UPDATED
+  LEAD_FOLLOWUP_ADDED
+  LEAD_FOLLOWUP_DELETED
+  LEAD_FOLLOWUP_UPDATED
+  LEAD_FOLLOWUP_DATE_EXTENDED
+  LEAD_FOLLOWUP_COMPLETED
+  LEAD_FOLLOWUP_COMMENT_ADDED
+  LEAD_FOLLOWUP_COMMENT_DELETED
+  LEAD_FOLLOWUP_COMMENT_UPDATED
+  OFFLINE_PAYMENT_ADDED
+  OFFLINE_PAYMENT_DELETED
+}
