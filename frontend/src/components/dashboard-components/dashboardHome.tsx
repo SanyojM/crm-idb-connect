@@ -7,7 +7,7 @@ import DashboardTodaysDeadline from "./dashboardTodaysDeadline";
 
 export default function DashboardHome() {
   return (
-    <div className=" grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className=" grid grid-cols-1 lg:grid-cols-2 space-y-6 gap-4">
 
       {/* My To-do's */}
       <DashboardTodo />

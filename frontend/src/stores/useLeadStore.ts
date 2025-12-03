@@ -29,6 +29,7 @@ export interface Lead {
 
 interface LeadState {
   leads: Lead[];
+  leadIds: string[];
   loading: boolean;
   fetchLeads: (branchId?: string) => Promise<void>;
   fetchLeadsBasedOnPermission: (userId: string, permissions: string[], branchId?: string) => Promise<void>;
@@ -44,12 +45,16 @@ interface LeadState {
 export const useLeadStore = create<LeadState>((set, get) => ({
   leads: [],
   loading: false,
+  leadIds: [],
 
   fetchLeads: async (branchId) => {
     set({ loading: true });
     try {
-      const data = await api.LeadsAPI.fetchLeads(branchId);
-      set({ leads: data as Lead[] });
+    const data = await api.LeadsAPI.fetchLeads(branchId);
+    set({
+      leads: data as Lead[],
+      leadIds: (data as any[]).map((l: any) => l.id!).filter(Boolean),
+    });
     } catch (error: any) {
       console.error("Error fetching leads:", error.message || error);
     }
@@ -68,7 +73,10 @@ export const useLeadStore = create<LeadState>((set, get) => ({
         // Otherwise, fetch only leads assigned to this user
         console.log("User is restricted to their own leads.");
         const data = await api.LeadsAPI.getCounsellorLeads(userId, branchId);
-        set({ leads: data as Lead[] });
+        set({
+          leads: data as Lead[],
+          leadIds: (data as any[]).map((l: any) => l.id!).filter(Boolean),
+        });
       }
     } catch (error: any) {
       console.error("Error fetching leads:", error.message || error);
@@ -90,7 +98,10 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ loading: true });
     try {
       const data = await api.LeadsAPI.getAgentLeads(agentId, branchId);
-      set({ leads: data as Lead[] });
+        set({
+          leads: data as Lead[],
+          leadIds: (data as any[]).map((l: any) => l.id!).filter(Boolean),
+        });
     } catch (error) {
       console.error("Error fetching agent leads:", error);
       throw error;
@@ -102,7 +113,10 @@ export const useLeadStore = create<LeadState>((set, get) => ({
     set({ loading: true });
     try {
       const data = await api.LeadsAPI.getCounsellorLeads(counsellorId, branchId);
-      set({ leads: data as Lead[] });
+        set({
+          leads: data as Lead[],
+          leadIds: (data as any[]).map((l: any) => l.id!).filter(Boolean),
+        });
     } catch (error) {
       console.error("Error fetching counsellor leads:", error);
       throw error;
