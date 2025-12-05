@@ -1,4 +1,5 @@
 import { Lead } from "./mocktypes";
+import { Application } from "@/stores/useApplicationStore";
 
 export const courses = [
     {
@@ -267,4 +268,152 @@ export const leadsData: Lead[] = [
         status: 'Assigned',
         starred: false
     }
+];
+
+export const mockApplications: Application[] = [
+  {
+    id: "app_001",
+    lead_id: "lead_001",
+    student_id: "stu_001",
+    given_name: "Rahul",
+    surname: "Sharma",
+    email: "rahul@example.com",
+    phone: "9876543210",
+    application_stage: "submitted",
+    created_at: "2024-09-10T10:00:00Z",
+
+    preferences: [
+      {
+        id: "pref_001",
+        application_id: "app_001",
+        preferred_country: "Canada",
+        preferred_course_name: "Computer Science",
+        preferred_course_type: "Bachelors",
+      },
+    ],
+
+    visa_details: [
+      {
+        id: "visa_001",
+        application_id: "app_001",
+        visa_status: "approved",
+      },
+    ],
+  },
+
+  {
+    id: "app_002",
+    lead_id: "lead_002",
+    student_id: "stu_002",
+    given_name: "Anjali",
+    surname: "Verma",
+    email: "anjali@example.com",
+    phone: "9123456780",
+    application_stage: "in_review",
+    created_at: "2024-09-12T14:30:00Z",
+
+    preferences: [
+      {
+        id: "pref_002",
+        application_id: "app_002",
+        preferred_country: "UK",
+        preferred_course_name: "Business Management",
+      },
+    ],
+
+    visa_details: [
+      {
+        id: "visa_002",
+        application_id: "app_002",
+        visa_status: "pending",
+      },
+    ],
+  },
+
+  {
+    id: "app_003",
+    lead_id: "lead_003",
+    student_id: "stu_003",
+    given_name: "Aarav",
+    surname: "Singh",
+    email: "aarav@example.com",
+    phone: "9823456710",
+    application_stage: "draft",
+    created_at: "2024-09-15T09:20:00Z",
+
+    preferences: [
+      {
+        id: "pref_003",
+        application_id: "app_003",
+        preferred_country: "Australia",
+        preferred_course_name: "Mechanical Engineering",
+      },
+    ],
+
+    visa_details: [
+      {
+        id: "visa_003",
+        application_id: "app_003",
+        visa_status: "not_applied",
+      },
+    ],
+  },
+
+  {
+    id: "app_004",
+    lead_id: "lead_004",
+    student_id: "stu_004",
+    given_name: "Simran",
+    surname: "Kaur",
+    email: "simran@example.com",
+    phone: "9800012345",
+    application_stage: "submitted",
+    created_at: "2024-09-18T16:00:00Z",
+
+    preferences: [
+      {
+        id: "pref_004",
+        application_id: "app_004",
+        preferred_country: "Canada",
+        preferred_course_name: "Data Science",
+      },
+    ],
+
+    visa_details: [
+      {
+        id: "visa_004",
+        application_id: "app_004",
+        visa_status: "rejected",
+      },
+    ],
+  },
+
+  {
+    id: "app_005",
+    lead_id: "lead_005",
+    student_id: "stu_005",
+    given_name: "Vikas",
+    surname: "Mishra",
+    email: "vikas@example.com",
+    phone: "9753102468",
+    application_stage: "in_review",
+    created_at: "2024-09-21T11:45:00Z",
+
+    preferences: [
+      {
+        id: "pref_005",
+        application_id: "app_005",
+        preferred_country: "USA",
+        preferred_course_name: "MBA",
+      },
+    ],
+
+    visa_details: [
+      {
+        id: "visa_005",
+        application_id: "app_005",
+        visa_status: "pending",
+      },
+    ],
+  },
 ];

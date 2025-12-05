@@ -8,6 +8,7 @@ import DashboardLeads from "@/components/dashboard-components/dashboardLeads";
 import DashboardApplications from "@/components/dashboard-components/dashboardApplications";
 import DashboardPayments from "@/components/dashboard-components/dashboardPayments";
 import SearchDrawer from "@/components/dashboard-components/SearchDrawer";
+import ApplicationsDashboardTab from "@/components/dashboard-components/dashboardApplicationTab";
 
 export default function Page() {
     const [selected, setSelected] = useState("home");
@@ -44,10 +45,10 @@ export default function Page() {
                 </div>
             </div>
 
-            <div className="min-h-[70vh]">
+            <div className=" h-full">
                 {selected === "home" && <DashboardHome />}
                 {selected === "leads" && <DashboardLeads />}
-                {selected === "applications" && <DashboardApplications />}
+                {selected === "applications" && <ApplicationsDashboardTab />}
                 {selected === "payments" && <DashboardPayments />}
             </div>
 
