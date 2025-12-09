@@ -85,6 +85,7 @@ export default function Sidebar() {
           </Link>
             )
           }
+          {/* {user?.role.toLowerCase() === "super admin" && ( */}
           {hasPermission(user?.permissions ?? [], PermissionPermission.ROLES_CREATE) && (
             <Link href="/roles-permissions" className="flex items-center gap-4 px-3 text-sm py-3 hover:bg-gray-200 rounded-xl text-black transition-colors">
               <Lock size={20} />
