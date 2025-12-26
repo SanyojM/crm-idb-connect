@@ -24,6 +24,7 @@ export interface OfflinePayment {
 
 interface OfflinePaymentState {
   payments: OfflinePayment[];
+  allPayments: OfflinePayment[];
   loading: boolean;
   fetchPaymentsByLeadId: (leadId: string) => Promise<void>;
   fetchPaymentsByReceiver: (receiverId: string) => Promise<void>;
@@ -32,13 +33,14 @@ interface OfflinePaymentState {
   deletePayment: (id: string, fileUrl?: string) => Promise<void>;
   uploadPaymentFile: (file: File, leadId?: string) => Promise<string | null>;
   deletePaymentFile: (fileUrl: string) => Promise<void>;
+  fetchAllPayments: () => Promise<void>;
   reset: () => void;
 }
 
 export const useOfflinePaymentStore = create<OfflinePaymentState>((set, get) => ({
   payments: [],
   loading: false,
-
+  allPayments: [],
   // Fetch all payments for a given lead
   fetchPaymentsByLeadId: async (leadId) => {
     set({ loading: true });
@@ -201,5 +203,23 @@ export const useOfflinePaymentStore = create<OfflinePaymentState>((set, get) => 
       console.error("Error deleting file from storage:", err);
     }
   },
-  reset: () => set({ payments: [], loading: false }),
+  fetchAllPayments: async () => {
+    set({ loading: true });
+
+    const { data, error } = await supabase
+      .from("offline_payments")
+      .select("*, leads(name), partners(name, role)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching all payments:", error.message);
+      set({ loading: false });
+      throw error;
+    }
+
+    set({ allPayments: data as OfflinePayment[] });
+    set({ loading: false });
+  },  
+
+  reset: () => set({ payments: [], allPayments: [], loading: false }),
 }));

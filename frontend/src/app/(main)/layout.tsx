@@ -5,7 +5,7 @@ import Sidebar from "@/components/sidebar"; // desktop sidebar
 import Navbar from "@/components/navbar";   // mobile navbar
 import BranchSelector from "@/components/BranchSelector";
 import { menus } from "@/config/menus";    // unified menus
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { usePartnerStore } from "@/stores/usePartnerStore";
 import { useBranchStore } from "@/stores/useBranchStore";
