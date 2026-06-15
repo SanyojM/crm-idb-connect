@@ -22,8 +22,10 @@ import { GetUser } from '../auth/get-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '../auth/roles.enum';
 import { RolesGuard } from '../auth/roles.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/require-permissions.decorator';
 
-@UseGuards(RolesGuard)
+@UseGuards(RolesGuard, PermissionsGuard)
 @Controller('leads')
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) { }
@@ -40,6 +42,7 @@ export class LeadsController {
   }
 
   @Get()
+  @RequirePermissions('Lead View')
   findAll(
     @GetUser() user: any,
     @Query('assigned_to') assignedTo?: string,
@@ -67,11 +70,13 @@ export class LeadsController {
   }
 
   @Get(':id')
+  @RequirePermissions('Lead View')
   findOne(@Param('id') id: string, @GetUser() user: any) {
     return this.leadsService.findOne(id, user);
   }
 
   @Patch(':id')
+  @RequirePermissions('Lead Update', 'Lead Manage')
   update(
     @Param('id') id: string,
     @Body() updateLeadDto: Partial<CreateLeadDto>,
@@ -81,7 +86,7 @@ export class LeadsController {
   }
 
   @Post('bulk/assign')
-  @Roles(Role.Admin)
+  @RequirePermissions('Lead Assignment')
   bulkAssign(@Body() bulkAssignDto: BulkAssignDto, @GetUser() user: any) {
     return this.leadsService.bulkAssign(bulkAssignDto, user);
   }
@@ -93,13 +98,13 @@ export class LeadsController {
   }
   
   @Post('bulk/status')
-  @Roles(Role.Admin)
+  @RequirePermissions('Lead Update', 'Lead Manage')
   bulkUpdateStatus(@Body() bulkStatusDto: BulkStatusDto, @GetUser() user: any) {
     return this.leadsService.bulkUpdateStatus(bulkStatusDto, user);
   }
   
   @Post('bulk/message')
-  @Roles(Role.Admin)
+  @RequirePermissions('Lead Update', 'Lead Manage')
   bulkSendMessage(@Body() bulkMessageDto: BulkMessageDto, @GetUser() user: any) {
     return this.leadsService.bulkSendMessage(bulkMessageDto, user);
   }
@@ -110,13 +115,13 @@ export class LeadsController {
   }
   
   @Delete(':id')
-  @Roles(Role.Admin)
+  @RequirePermissions('Lead Delete')
   remove(@Param('id') id: string) {
     return this.leadsService.remove(id);
   }
   
   @Post('bulk/delete')
-  @Roles(Role.Admin)
+  @RequirePermissions('Lead Delete')
   bulkDelete(@Body() bulkDeleteDto: BulkDeleteDto) {
     return this.leadsService.bulkDelete(bulkDeleteDto);
   }

@@ -12,6 +12,25 @@ import { AssignPermissionsDto } from './dto/assign-permission.dto';
 export class PermissionsService {
   constructor(private prisma: PrismaService) {}
 
+  private permCache = new Map<string, { perms: string[]; exp: number }>();
+  private readonly CACHE_TTL = Number(process.env.AUTHZ_CACHE_TTL_MS || '45000');
+
+  async getEffectivePermissionsForPartner(partnerId: string): Promise<string[]> {
+    const hit = this.permCache.get(partnerId);
+    if (hit && hit.exp > Date.now()) return hit.perms;
+    const res = await this.resolveEffectivePermissionsForPartner(partnerId);
+    this.permCache.set(partnerId, { perms: res.permissions, exp: Date.now() + this.CACHE_TTL });
+    return res.permissions;
+  }
+
+  invalidatePermCache(partnerId?: string): void {
+    if (partnerId) {
+      this.permCache.delete(partnerId);
+    } else {
+      this.permCache.clear();
+    }
+  }
+
   private resolveAuthzSource(): 'role' | 'department' | 'hybrid' {
     const value = (process.env.AUTHZ_SOURCE || 'hybrid').toLowerCase();
     if (value === 'role' || value === 'department' || value === 'hybrid') {
@@ -193,8 +212,8 @@ export class PermissionsService {
   async createRole(createRoleDto: CreateRoleDto) {
     try {
       const { permissionIds, ...roleData } = createRoleDto;
-      
-      return await this.prisma.role.create({
+
+      const created = await this.prisma.role.create({
         data: {
           ...roleData,
           role_permissions: permissionIds?.length ? {
@@ -215,6 +234,8 @@ export class PermissionsService {
           },
         },
       });
+      this.invalidatePermCache();
+      return created;
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ConflictException('Role with this name already exists');
@@ -271,7 +292,7 @@ export class PermissionsService {
       
       // If permissionIds are provided, we need to replace all role_permissions
       if (permissionIds !== undefined) {
-        return await this.prisma.role.update({
+        const updated = await this.prisma.role.update({
           where: { id },
           data: {
             ...roleData,
@@ -294,10 +315,12 @@ export class PermissionsService {
             },
           },
         });
+        this.invalidatePermCache();
+        return updated;
       }
-      
+
       // If no permissionIds, just update role data
-      return await this.prisma.role.update({
+      const updated = await this.prisma.role.update({
         where: { id },
         data: roleData,
         include: {
@@ -312,6 +335,8 @@ export class PermissionsService {
           },
         },
       });
+      this.invalidatePermCache();
+      return updated;
     } catch (error) {
       if (error.code === 'P2025') {
         throw new NotFoundException(`Role with ID ${id} not found`);
@@ -372,7 +397,9 @@ export class PermissionsService {
     });
 
     // Return updated role with permissions
-    return await this.findOneRole(role_id);
+    const result = await this.findOneRole(role_id);
+    this.invalidatePermCache();
+    return result;
   }
 
   async getRolePermissions(roleId: string) {
@@ -400,7 +427,7 @@ export class PermissionsService {
 
   async removePermissionFromRole(roleId: string, permissionId: string) {
     try {
-      return await this.prisma.role_permission.delete({
+      const result = await this.prisma.role_permission.delete({
         where: {
           role_id_permission_id: {
             role_id: roleId,
@@ -408,6 +435,8 @@ export class PermissionsService {
           },
         },
       });
+      this.invalidatePermCache();
+      return result;
     } catch (error) {
       if (error.code === 'P2025') {
         throw new NotFoundException('Role permission not found');
@@ -521,7 +550,9 @@ export class PermissionsService {
       }
     });
 
-    return this.getDepartmentPermissions(departmentId);
+    const result = await this.getDepartmentPermissions(departmentId);
+    this.invalidatePermCache();
+    return result;
   }
 
   async resolveEffectivePermissionsForPartner(partnerId: string): Promise<{

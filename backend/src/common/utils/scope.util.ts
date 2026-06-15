@@ -47,8 +47,12 @@ export function getScope(user: any, departmentCodes?: string[]) {
   }
 
   // 4. Front Desk and Accounts: see ALL leads in their branch (not just assigned to them)
+  // Normalize codes by stripping separators so DB values like "FRONT_DESK",
+  // "front-desk" or "front desk" all resolve to the canonical "frontdesk".
   if (departmentCodes?.length) {
-    const codes = departmentCodes.map((c: string) => c.toLowerCase().trim());
+    const codes = departmentCodes.map((c: string) =>
+      c.toLowerCase().trim().replace(/[\s_-]+/g, ''),
+    );
     if (codes.includes('frontdesk') || codes.includes('accounts')) {
       return { branch_id: user.branch_id };
     }
