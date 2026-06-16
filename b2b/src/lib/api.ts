@@ -457,6 +457,12 @@ export const DashboardAPI = {
 
 // --- Announcements ---
 export const AnnouncementsAPI = {
+  getB2B: async (token?: string) => {
+    const res = await fetch(`${API_BASE}/announcements?audience=b2b`, {
+      headers: getHeaders(true, token),
+    });
+    return handleResponse(res);
+  },
   getAll: async (targetAudience?: string, branchId?: string, token?: string) => {
     let url = `${API_BASE}/announcements`;
     const params = new URLSearchParams();

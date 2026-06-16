@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { motion, LayoutGroup } from "framer-motion";
-import { Bell, Search, UserCircle, LogOut, Key } from "lucide-react";
+import { Search, UserCircle, LogOut, Key } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Badge, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@heroui/react";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@heroui/react";
 import { useState } from "react";
 import { AuthAPI } from "@/lib/api";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 export default function Header() {
   const { partner, logout } = useAuth();
@@ -79,9 +80,7 @@ export default function Header() {
                     <input type="text" className="focus:ring-none focus:outline-none" />
                 </div>
                 
-                <Badge content="5" color="danger" size="sm">
-                  <Bell className="w-6 h-6 stroke-[1.25px] cursor-pointer hover:text-gray-600" />
-                </Badge>
+                <NotificationBell />
                 
                 <Dropdown placement="bottom-end">
                   <DropdownTrigger>
