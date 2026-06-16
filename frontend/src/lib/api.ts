@@ -1172,11 +1172,12 @@ export const RolesAPI = {
 };
 
 export const AnnouncementsAPI = {
-  getAll: async (filters?: { target_audience?: string; branch_id?: string; includeInactive?: boolean }) => {
+  getAll: async (filters?: { target_audience?: string; branch_id?: string; includeInactive?: boolean; audience?: string }) => {
     const params = new URLSearchParams();
     if (filters?.target_audience) params.append('target_audience', filters.target_audience);
     if (filters?.branch_id) params.append('branch_id', filters.branch_id);
     if (filters?.includeInactive !== undefined) params.append('includeInactive', String(filters.includeInactive));
+    if (filters?.audience) params.append('audience', filters.audience);
     const url = params.toString() ? `${API_BASE}/announcements?${params}` : `${API_BASE}/announcements`;
     const res = await fetch(url, { headers: getHeaders() });
     return handleResponse(res);

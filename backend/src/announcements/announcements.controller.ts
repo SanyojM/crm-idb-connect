@@ -23,10 +23,14 @@ export class AnnouncementsController {
   }
 
   @Get()
-  findAll(@Request() req, @Query('includeInactive') includeInactive?: string) {
+  findAll(
+    @Request() req,
+    @Query('includeInactive') includeInactive?: string,
+    @Query('audience') audience?: string,
+  ) {
     const includeInactiveBool = includeInactive === 'true';
-    // Pass full user object for Branch Logic
-    return this.announcementsService.findAll(req.user, includeInactiveBool);
+    // audience param: when provided (e.g. "b2b" or "internal"), filters by audience field
+    return this.announcementsService.findAll(req.user, includeInactiveBool, audience);
   }
 
   @Get('unread-count')

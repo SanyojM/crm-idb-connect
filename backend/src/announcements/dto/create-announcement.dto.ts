@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsArray, IsEnum } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsArray, IsEnum, IsIn } from 'class-validator';
 
 enum TargetAudience {
   USER = 'user',
@@ -16,6 +16,10 @@ export class CreateAnnouncementDto {
 
   @IsEnum(TargetAudience)
   target_audience: string;
+
+  @IsOptional()
+  @IsIn(['all', 'internal', 'b2b'])
+  audience?: string;
 
   @IsOptional()
   @IsArray()

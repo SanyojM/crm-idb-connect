@@ -4,22 +4,25 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
 import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
+// Cast to any to allow `audience` field until prisma generate runs post-deploy
+const announcementsModel = (prisma: PrismaService) => (prisma.announcements as any);
+
 @Injectable()
 export class AnnouncementsService {
   constructor(private prisma: PrismaService) {}
 
   // 1. Create
   async create(createDto: CreateAnnouncementDto, userId: string) {
-    // Destructure to ensure we only pass fields that exist in the Prisma Schema
-    const { title, content, target_audience, users, branch_id, is_active } = createDto;
+    const { title, content, target_audience, audience, users, branch_id, is_active } = createDto;
 
-    return this.prisma.announcements.create({
+    return announcementsModel(this.prisma).create({
       data: {
         title,
         content,
         target_audience,
-        users: users ?? [],     // Default to empty array if null
-        branch_id: branch_id,   // ✅ Correct field name (matches schema)
+        audience: audience ?? 'all',
+        users: users ?? [],
+        branch_id: branch_id,
         is_active: is_active ?? true,
         created_by: userId,
       },
@@ -29,45 +32,57 @@ export class AnnouncementsService {
     });
   }
 
-  // 2. FindAll: The Core Logic
-  async findAll(user: any, includeInactive = false) {
+  // 2. FindAll
+  // audienceFilter: when provided (e.g. "b2b"), returns rows where audience IN [audienceFilter, "all"]
+  // when not provided, applies normal CRM branch scoping
+  async findAll(user: any, includeInactive = false, audienceFilter?: string) {
     const where: any = {};
 
-    // A. "Active" Filter
+    // A. Active filter
     if (!includeInactive) {
       where.is_active = true;
     }
 
-    // B. Scoping Logic
-    if (user.role === 'admin') {
-      // Admins see EVERYTHING (Management View)
-    } else {
-      // Standard Users (Consumption View)
-      where.OR = [
-        { 
-          target_audience: 'branch' // All Branches
-        },
-        { 
-          target_audience: 'branch-specific',
-          branches: { has: user.branch_id } 
-        },
-        { 
-          target_audience: 'role-based',
-          roles: { has: user.role?.toLowerCase() } 
-        },
-        { 
-          target_audience: 'user', 
-          users: { has: user.id } 
+    if (audienceFilter) {
+      // B1. Audience-based filter (for B2B portal) — bypass CRM scoping
+      where.AND = [
+        {
+          OR: [
+            { audience: audienceFilter },
+            { audience: 'all' },
+          ],
         },
       ];
+    } else {
+      // B2. CRM Scoping Logic
+      if (user.role === 'admin') {
+        // Admins see EVERYTHING
+      } else {
+        where.OR = [
+          { target_audience: 'branch' },
+          { target_audience: 'branch-specific', branches: { has: user.branch_id } },
+          { target_audience: 'role-based', roles: { has: user.role?.toLowerCase() } },
+          { target_audience: 'user', users: { has: user.id } },
+        ];
+        // CRM users see internal + all (not b2b-only)
+        where.AND = [
+          {
+            OR: [
+              { audience: 'internal' },
+              { audience: 'all' },
+              { audience: null },
+            ],
+          },
+        ];
+      }
     }
 
-    return this.prisma.announcements.findMany({
+    return announcementsModel(this.prisma).findMany({
       where,
       include: {
         partners: { select: { id: true, name: true, email: true } },
         announcement_reads: {
-          where: { partner_id: user.id }, // Check if *this* user read it
+          where: { partner_id: user.id },
         },
       },
       orderBy: { created_at: 'desc' },
@@ -75,7 +90,7 @@ export class AnnouncementsService {
   }
 
   async findOne(id: string) {
-    const announcement = await this.prisma.announcements.findUnique({
+    const announcement = await announcementsModel(this.prisma).findUnique({
       where: { id },
       include: {
         partners: { select: { id: true, name: true, email: true } },
@@ -93,7 +108,7 @@ export class AnnouncementsService {
 
   async update(id: string, updateDto: UpdateAnnouncementDto) {
     await this.findOne(id);
-    return this.prisma.announcements.update({
+    return announcementsModel(this.prisma).update({
       where: { id },
       data: updateDto,
       include: { partners: { select: { id: true, name: true, email: true } } },
@@ -122,9 +137,9 @@ export class AnnouncementsService {
 
   async markAllAsRead(user: any) {
     const announcements = await this.findAll(user, false);
-    const unread = announcements.filter(a => a.announcement_reads.length === 0);
-    
-    const promises = unread.map(a => 
+    const unread = announcements.filter((a: any) => a.announcement_reads.length === 0);
+
+    const promises = unread.map((a: any) =>
       this.prisma.announcement_reads.upsert({
         where: {
           announcement_id_partner_id: {
@@ -142,14 +157,10 @@ export class AnnouncementsService {
   }
 
   async getUnreadCount(user: any) {
-    // Reuse findAll to ensure scoping rules apply
     const announcements = await this.findAll(user, false);
-    
-    // Count how many have NO read record for this user
     const unreadCount = announcements.filter(
-      (a) => a.announcement_reads.length === 0
+      (a: any) => a.announcement_reads.length === 0
     ).length;
-
     return { count: unreadCount };
   }
 }

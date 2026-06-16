@@ -26,6 +26,7 @@ import {
 import { Plus, ChevronsUpDown } from "lucide-react";
 
 type TargetAudience = "user" | "branch" | "branch-specific" | "role-based";
+type AudienceScope = "all" | "internal" | "b2b";
 
 interface Role {
   id: string;
@@ -45,13 +46,15 @@ export default function CreateAnnouncementDialog() {
     title: string;
     content: string;
     target_audience: TargetAudience;
+    audience: AudienceScope;
     users: string[];
     branches: string[];
     roles: string[];
   }>({
     title: "",
     content: "",
-    target_audience: "branch", 
+    target_audience: "branch",
+    audience: "all",
     users: [],
     branches: [],
     roles: [],
@@ -74,13 +77,14 @@ export default function CreateAnnouncementDialog() {
     try {
       await createAnnouncement(formData);
       onOpenChange();
-      setFormData({ 
-        title: "", 
-        content: "", 
-        target_audience: "branch", 
-        users: [], 
-        branches: [], 
-        roles: [] 
+      setFormData({
+        title: "",
+        content: "",
+        target_audience: "branch",
+        audience: "all",
+        users: [],
+        branches: [],
+        roles: [],
       });
     } catch (error) {
       console.error(error);
@@ -169,6 +173,22 @@ export default function CreateAnnouncementDialog() {
                   <SelectItem key="branch-specific">Specific Branches</SelectItem>
                   <SelectItem key="role-based">Role Based</SelectItem>
                   <SelectItem key="user">Specific Users</SelectItem>
+                </Select>
+
+                <Select
+                  label="Visible To"
+                  placeholder="Select visibility"
+                  selectedKeys={[formData.audience]}
+                  onSelectionChange={(keys) => {
+                    const selected = Array.from(keys)[0] as AudienceScope;
+                    setFormData({ ...formData, audience: selected });
+                  }}
+                  variant="bordered"
+                  description="Controls which portal(s) can see this announcement"
+                >
+                  <SelectItem key="all">All (Internal + B2B Agents)</SelectItem>
+                  <SelectItem key="internal">Internal Staff Only</SelectItem>
+                  <SelectItem key="b2b">B2B Agents Only</SelectItem>
                 </Select>
 
                 {formData.target_audience === "branch-specific" && (

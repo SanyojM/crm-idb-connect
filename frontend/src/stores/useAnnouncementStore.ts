@@ -6,6 +6,7 @@ export interface Announcement {
   title: string;
   content: string;
   target_audience: "user" | "branch" | "branch-specific" | "role-based";
+  audience?: "all" | "internal" | "b2b" | null;
   branch_id?: string | null;
   users?: string[] | null; // Array of user IDs
   branches?: string[] | null; // Array of branch IDs
