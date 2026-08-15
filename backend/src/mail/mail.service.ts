@@ -56,6 +56,8 @@ export class MailService {
       return;
     }
 
+    console.log('DEBUG SMTP CONFIG:', config);
+
     try {
       const transporter = nodemailer.createTransport({
         host: config.host,
@@ -90,6 +92,24 @@ export class MailService {
       throw error;
     }
   }
+
+
+  async sendOtpEmail(to: string, name: string, otp: string) {
+  const html = `
+    <div style="font-family: sans-serif;">
+      <p>Hi ${name},</p>
+      <p>Your OTP for password reset is:</p>
+      <h2 style="letter-spacing: 4px;">${otp}</h2>
+      <p>This code expires in 10 minutes. If you didn't request this, you can ignore this email.</p>
+    </div>
+  `;
+
+  return this.sendEmail({
+    to,
+    subject: 'Your Password Reset OTP',
+    html,
+  });
+}
 
   async sendWelcomeEmail(email: string, password: string) {
     const mailOptions = {

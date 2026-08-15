@@ -69,5 +69,12 @@
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.8",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "@heroui/shared-utils@2.1.11": true,
+    "@prisma/engines@6.19.0": true,
+    "@tailwindcss/oxide@4.1.12": true,
+    "prisma@6.19.0": true,
+    "sharp@0.34.3": true
   }
 }

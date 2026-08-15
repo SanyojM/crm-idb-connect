@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { PermissionsService } from '../permissions/permissions.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +17,9 @@ export class AuthService {
     private prisma: PrismaService,
     private permissionsService: PermissionsService,
     private mailService: MailService,
-  ) {}
+  ) { }
+
+
 
   async validateUser(email: string, pass: string): Promise<any> {
     // 1. Try to find as Internal Partner
@@ -33,7 +36,7 @@ export class AuthService {
     const agent = await this.agentsService.findByEmail(email);
     if (agent) {
       if (agent.status === 'REJECTED' || !agent.is_active) {
-         return null; 
+        return null;
       }
 
       const isMatch = await bcrypt.compare(pass, agent.password);
@@ -66,7 +69,7 @@ export class AuthService {
     if (user.type === 'partner') {
       const authz = await this.permissionsService.resolveEffectivePermissionsForPartner(user.id);
       const permissions = authz.permissions;
-      
+
       payload = {
         email: user.email,
         sub: user.id,
@@ -295,35 +298,6 @@ export class AuthService {
     };
   }
 
-  async resetPassword(user: any, newPassword: string) {
-    if (!newPassword || newPassword.length < 6) {
-      throw new BadRequestException('Password must be at least 6 characters long');
-    }
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const userId = user.id || user.userId;
-
-    if (user.type === 'partner') {
-      await this.prisma.partners.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
-      });
-    } else if (user.type === 'agent') {
-      await this.prisma.agent.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
-      });
-    } else if (user.type === 'agent_team_member') {
-      await this.prisma.agentTeamMember.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
-      });
-    } else {
-      throw new BadRequestException('Invalid user type');
-    }
-
-    return { message: 'Password reset successfully' };
-  }
-
   private generateRandomPassword(length = 10): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%';
     let password = '';
@@ -333,84 +307,111 @@ export class AuthService {
     return password;
   }
 
+
+
   async forgotPassword(email: string) {
-    if (!email) {
-      throw new BadRequestException('Email is required');
+    if (!email) throw new BadRequestException('Email is required');
+
+    const [agent, teamMember, partner] = await Promise.all([
+      this.prisma.agent.findUnique({ where: { email } }),
+      this.prisma.agentTeamMember.findUnique({ where: { email } }),
+      this.prisma.partners.findUnique({ where: { email } }),
+    ]);
+
+    const user = agent ?? teamMember ?? partner;
+    const userType = agent ? 'agent' : teamMember ? 'agent_team_member' : partner ? 'partner' : null;
+    console.log('DEBUG - user found:', !!user, 'userType:', userType);
+
+    if (!user || !userType) {
+      await bcrypt.hash('dummy-timing-safety', 10); // keep timing consistent
+      return { message: 'If this email exists in our records, an OTP has been sent.' };
     }
 
-    let user: any = null;
-    let userType: 'partner' | 'agent' | 'agent_team_member' | null = null;
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
-    // 1. Search Agent
-    const agent = await this.prisma.agent.findUnique({ where: { email } });
-    if (agent) {
-      user = agent;
-      userType = 'agent';
-    } else {
-      // 2. Search Team Member
-      const teamMember = await this.prisma.agentTeamMember.findUnique({ where: { email } });
-      if (teamMember) {
-        user = teamMember;
-        userType = 'agent_team_member';
-      } else {
-        // 3. Search Partner
-        const partner = await this.prisma.partners.findUnique({ where: { email } });
-        if (partner) {
-          user = partner;
-          userType = 'partner';
-        }
-      }
+
+
+    const dbRes = await this.prisma.passwordReset.upsert({
+      where: { email },
+      update: { otpHash, expiresAt, verified: false, attempts: 0, userType },
+      create: { email, userType, otpHash, expiresAt },
+    });
+
+    if (dbRes!) {
+      console.log("db working");
+
     }
-
-    if (!user) {
-      // Prevent email enumeration
-      return { message: 'If this email exists in our records, a temporary password has been sent.' };
-    }
-
-    const tempPassword = this.generateRandomPassword(12);
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     try {
-      if (userType === 'agent') {
-        // Send email first
-        await this.mailService.sendTemplateEmail(user.email, 'AGENT_ONBOARDING', {
-          name: user.name,
-          company: user.agency_name,
-          email: user.email,
-          password: tempPassword,
-          login_url: 'https://b2b.idbconnect.global/login',
-        });
-        // Update database only if email succeeded
-        await this.prisma.agent.update({
-          where: { id: user.id },
-          data: { password: hashedPassword },
-        });
-      } else if (userType === 'agent_team_member') {
-        await this.mailService.sendTemplateEmail(user.email, 'AGENT_ONBOARDING', {
-          name: user.name,
-          company: 'Agent Portal Team',
-          email: user.email,
-          password: tempPassword,
-          login_url: 'https://b2b.idbconnect.global/login',
-        });
-        await this.prisma.agentTeamMember.update({
-          where: { id: user.id },
-          data: { password: hashedPassword },
-        });
-      } else if (userType === 'partner') {
-        await this.mailService.sendWelcomeEmail(user.email, tempPassword);
-        await this.prisma.partners.update({
-          where: { id: user.id },
-          data: { password: hashedPassword },
-        });
-      }
+      await this.mailService.sendOtpEmail(user.email, user.name, otp);
+      console.log('OTP email sent successfully');
     } catch (err) {
-      console.error('Forgot password action error:', err);
-      throw new InternalServerErrorException(
-        'Failed to send password recovery email. Please check your SMTP settings or try again later.'
-      );
+      console.error('Failed to send OTP email:', err);
+      throw new InternalServerErrorException('Failed to send OTP email');
     }
 
-    return { message: 'If this email exists in our records, a temporary password has been sent.' };
+
+    return { message: 'If this email exists in our records, an OTP has been sent.' };
+  }
+
+  async verifyOtp(email: string, otp: string) {
+    const record = await this.prisma.passwordReset.findUnique({ where: { email } });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new BadRequestException('OTP expired or invalid');
+    }
+
+    if (record.attempts >= 5) {
+      throw new BadRequestException('Too many attempts. Please request a new OTP.');
+    }
+
+    const isValid = await bcrypt.compare(otp, record.otpHash);
+
+    if (!isValid) {
+      await this.prisma.passwordReset.update({
+        where: { email },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    await this.prisma.passwordReset.update({
+      where: { email },
+      data: { verified: true },
+    });
+
+    return { message: 'OTP verified' };
+  }
+
+
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    const record = await this.prisma.passwordReset.findUnique({ where: { email } });
+
+    if (!record || record.expiresAt < new Date() || !record.verified) {
+      throw new BadRequestException('OTP not verified or expired');
+    }
+
+    const isValid = await bcrypt.compare(otp, record.otpHash);
+    if (!isValid) throw new BadRequestException('Invalid OTP');
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the correct table based on stored userType
+    if (record.userType === 'agent') {
+      await this.prisma.agent.update({ where: { email }, data: { password: hashedPassword } });
+    } else if (record.userType === 'agent_team_member') {
+      await this.prisma.agentTeamMember.update({ where: { email }, data: { password: hashedPassword } });
+    } else if (record.userType === 'partner') {
+      await this.prisma.partners.update({ where: { email }, data: { password: hashedPassword } });
+    } else {
+      throw new BadRequestException('Invalid reset request');
+    }
+
+    // OTP is single-use — delete it
+    await this.prisma.passwordReset.delete({ where: { email } });
+
+    return { message: 'Password reset successful' };
   }
 }

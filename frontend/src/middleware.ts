@@ -1,19 +1,22 @@
 // src/middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
 
+const PUBLIC_PATHS = ["/login", "/forget-password"];
+
 export async function middleware(request: NextRequest) {
   const currentPath = request.nextUrl.pathname;
+  console.log(currentPath);
 
   // 1. Handle API requests (for CORS)
   if (currentPath.startsWith("/api/")) {
     const response = NextResponse.next();
-    // Add CORS headers to the response
     response.headers.append("Access-Control-Allow-Credentials", "true");
     const allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
       "http://localhost:3003",
+      "http://localhost:5005",
       "https://idbconnect.global",
       "https://student.idbconnect.global",
       "https://inquiry.idbconnect.global",
@@ -36,12 +39,10 @@ export async function middleware(request: NextRequest) {
   const partnerSession = request.cookies.get("crm-partner-session") || request.cookies.get("partner-session");
   let partnerUser = null;
 
-  // Check if both token and session exist
   if (authToken && partnerSession) {
     try {
       partnerUser = JSON.parse(partnerSession.value);
     } catch (error) {
-      // Clear invalid cookies
       const responseWithClearedCookie = NextResponse.next({
         request: { headers: request.headers },
       });
@@ -54,14 +55,15 @@ export async function middleware(request: NextRequest) {
   }
 
   const isAuthenticated = !!partnerUser && !!authToken;
+  const isPublicPath = PUBLIC_PATHS.includes(currentPath);
 
-  // Redirect unauthenticated users to login (except /login and /b2b routes)
-  if (!isAuthenticated && currentPath !== "/login" && !currentPath.startsWith("/b2b")) {
+  // Redirect unauthenticated users to login (except public paths and /b2b routes)
+  if (!isAuthenticated && !isPublicPath && !currentPath.startsWith("/b2b")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Only redirect to dashboard if user is on login page or root - DON'T redirect from other pages
-  if (isAuthenticated && currentPath === "/login") {
+  // Redirect authenticated users away from public auth pages
+  if (isAuthenticated && isPublicPath) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -69,11 +71,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // For all other cases, let the request proceed without redirecting
   return NextResponse.next();
 }
 
 export const config = {
-  // ✅ Updated matcher to include both pages and API routes
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

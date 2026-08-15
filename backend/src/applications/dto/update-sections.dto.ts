@@ -46,7 +46,7 @@ export class UpdateEducationDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => EducationRecordDto)
-  records: EducationRecordDto[];
+  records!: EducationRecordDto[];
 }
 
 // --- 3. Preference Details DTO ---
@@ -69,7 +69,7 @@ export class UpdatePreferencesDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PreferencesRecordDto)
-  records?: PreferencesRecordDto[];
+  records!: PreferencesRecordDto[];
 
   // Backward-compatible flat payload support:
   // { preferred_country: "...", preferred_university: "..." }
@@ -103,7 +103,7 @@ export class UpdateTestsDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TestRecordDto)
-  records: TestRecordDto[];
+  records!: TestRecordDto[];
 }
 
 // --- 5. Work Experience DTO (Array) ---
@@ -121,7 +121,7 @@ export class UpdateWorkExperienceDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => WorkExperienceRecordDto)
-  records: WorkExperienceRecordDto[];
+  records!: WorkExperienceRecordDto[];
 }
 
 // --- 6. Visa / Passport Details DTO ---

@@ -11,7 +11,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { Logger, ValidationPipe } from '@nestjs/common';
 
 // Fix BigInt serialization issue
-(BigInt.prototype as any).toJSON = function () {
+(BigInt.prototype as any).toJSON = function () {  
   return this.toString();
 };
 

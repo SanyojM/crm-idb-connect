@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Phone } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -112,11 +113,17 @@ export default function LoginPage() {
             {!loading && <ArrowRight size={20} />}
           </button>
 
+
+
           <p className="text-center text-xs text-gray-500">
             By signing up you are agreeing to <span className="font-medium text-blue-600 hover:underline hover:cursor-pointer">Terms & Conditions</span>
           </p>
         </form>
+        <div className="flex justify-end w-full hover:text-blue-400">
+          <Link href="/forget-password">Forget Password</Link>
+        </div>
       </div>
+
     </div>
   );
 }

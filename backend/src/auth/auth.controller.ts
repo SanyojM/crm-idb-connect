@@ -6,10 +6,13 @@ import { LoginDto } from './dto/login.dto';
 import { Public } from './public.decorator';
 import { GetUser } from './get-user.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   /**
    * POST /auth/login
@@ -25,6 +28,25 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
+  @Public()
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Post('verify-otp')
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto.email, dto.otp);
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  @Public()
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.email, dto.otp, dto.newPassword);
+  }
+
   @Get('me')
   async me(@GetUser() user: any) {
     return this.authService.getCurrentSession(user);
@@ -36,15 +58,4 @@ export class AuthController {
     return this.authService.exchangeStudentPanelStaffToken(staffToken);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('reset-password')
-  async resetPassword(@GetUser() user: any, @Body('newPassword') newPassword: string) {
-    return this.authService.resetPassword(user, newPassword);
-  }
-
-  @Public()
-  @Post('forgot-password')
-  async forgotPassword(@Body('email') email: string) {
-    return this.authService.forgotPassword(email);
-  }
 }

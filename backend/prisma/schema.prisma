@@ -489,6 +489,19 @@ model Agent {
   @@map("agents")
 }
 
+model PasswordReset {
+  id        String   @id @default(uuid())
+  email     String
+  userType  String   // 'agent' | 'agent_team_member' | 'partner'
+  otpHash   String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([email])
+}
+
 model AgentCategory {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name              String   @unique          // "A", "B", "C"

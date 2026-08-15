@@ -91,7 +91,7 @@ async function main() {
 
   // 3. Assign ALL permissions to Admin
   console.log('🔗 Assigning All Permissions to Admin...');
-  
+
   // Clear existing permissions to avoid duplicates/stale data
   await prisma.role_permission.deleteMany({
     where: { role_id: adminRole.id }
@@ -127,15 +127,15 @@ async function main() {
   // 5. Create Super Admin User
   const adminEmail = 'idbconnect@gmail.com';
   const adminPassword = 'idbconnect';
-  
+
   console.log(`👤 Creating/Checking Admin User (${adminEmail})...`);
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
   await prisma.partners.upsert({
     where: { email: adminEmail },
     update: {
-      role_id: adminRole.id, 
-      branch_id: headOffice.id 
+      role_id: adminRole.id,
+      branch_id: headOffice.id
     },
     create: {
       name: 'Super Admin',
@@ -151,6 +151,283 @@ async function main() {
       zone: 'North',
     },
   });
+
+  // 6. Seed a few test Leads, assigned to Head Office
+  console.log('📋 Seeding Test Leads...');
+
+  const testLeads = [
+    {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }, {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma.test@example.com',
+      mobile: '9111100001',
+      type: 'lead',
+      preferred_country: 'Canada',
+      preferred_course: 'MBA',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Priya Verma',
+      email: 'priya.verma.test@example.com',
+      mobile: '9111100002',
+      type: 'lead',
+      preferred_country: 'UK',
+      preferred_course: 'MSc Computer Science',
+      status: 'NEW',
+      branch_id: headOffice.id,
+    },
+    {
+      name: 'Arjun Mehta',
+      email: 'arjun.mehta.test@example.com',
+      mobile: '9111100003',
+      type: 'lead',
+      preferred_country: 'Australia',
+      preferred_course: 'Data Science',
+      status: 'CONTACTED',
+      branch_id: headOffice.id,
+    }
+  ];
+
+  for (const lead of testLeads) {
+    await prisma.leads.upsert({
+      where: { email: lead.email },
+      update: {},
+      create: lead,
+    });
+  }
+  console.log(`   - Seeded ${testLeads.length} test leads.`);
 
   console.log(`✅ Seeding Completed!`);
   console.log(`   - Admin Login: ${adminEmail}`);

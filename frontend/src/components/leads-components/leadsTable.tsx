@@ -22,6 +22,7 @@ import { maskPhone, maskEmail } from "@/lib/maskingUtils";
 import { ColumnConfig } from "./columnVisibilitySelector";
 import { toast } from "sonner";
 import { AssignCounsellorModal } from "./assignCounsellorModal";
+import api from "@/lib/api";
 
 type ChipColor = "primary" | "secondary" | "success" | "warning" | "danger" | "default";
 
@@ -126,22 +127,33 @@ export default function LeadsTable({
     }));
   };
 
-  const handleSelectionChange = (keys: "all" | Set<React.Key>) => {
-    const currentLeadIdsOnTab = new Set(leads.map((lead) => lead.id));
-    const selectionsFromOtherTabs = selectedLeadIds.filter((id) => !currentLeadIdsOnTab.has(id));
 
-    let currentTabSelections: string[] = [];
 
-    if (keys === "all") {
-      currentTabSelections = leads.map((lead) => lead.id).filter((id): id is string => typeof id === "string");
-    } else {
-      currentTabSelections = Array.from(keys).map(String);
+const handleSelectionChange = async (keys: "all" | Set<React.Key>) => {
+  const currentLeadIdsOnTab = new Set(leads.map((lead) => lead.id));
+  const selectionsFromOtherTabs = selectedLeadIds.filter((id) => !currentLeadIdsOnTab.has(id));
+
+  let currentTabSelections: string[] = [];
+
+  if (keys === "all") {
+    try {
+      const response = await api.LeadsAPI.fetchLeads(undefined, 1, 10000);
+      const allLeads = Array.isArray(response) ? response : (response?.data || []);
+      currentTabSelections = allLeads
+        .map((lead: Lead) => lead.id)
+        .filter((id: string | undefined): id is string => typeof id === "string");
+    } catch (error) {
+      console.error("Failed to select all leads:", error);
+      toast.error("Failed to select all leads");
+      return;
     }
+  } else {
+    currentTabSelections = Array.from(keys).map(String);
+  }
 
-    const newTotalSelection = [...new Set([...selectionsFromOtherTabs, ...currentTabSelections])];
-
-    setSelectedLeadIds(newTotalSelection);
-  };
+  const newTotalSelection = [...new Set([...selectionsFromOtherTabs, ...currentTabSelections])];
+  setSelectedLeadIds(newTotalSelection);
+};
 
   const renderCell = React.useCallback(
     (lead: Lead, columnKey: React.Key) => {

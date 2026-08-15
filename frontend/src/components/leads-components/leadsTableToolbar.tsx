@@ -175,10 +175,6 @@ export default function LeadsTableToolbar({
         selectedLeadIds={selectedLeadIds}
         allLeads={allLeads}
         onComplete={() => (setSelectedLeadIds([]))}
-        // // pass your actual messaging functions here
-        // sendSMS={sendSMS}
-        // sendWhatsAppMessage={sendWhatsAppMessage}
-        // sendEmail={sendEmail}
       />
     </div>
   );
