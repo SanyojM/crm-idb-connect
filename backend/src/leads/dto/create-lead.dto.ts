@@ -68,4 +68,12 @@ export class CreateLeadDto {
   @IsOptional()
   @IsUUID()
   assigned_to?: string;
+
+  @IsOptional()
+  @IsString()
+  journey_stage?: string;
+
+  @IsOptional()
+  @IsString()
+  journey_state?: string;
 }

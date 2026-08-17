@@ -417,6 +417,13 @@ export class LeadsService {
     };
   }
 
+  async getTimeline(id){
+  return this.prisma.timeline.findMany({
+    where: { lead_id: id },
+    orderBy: { created_at: 'desc' },
+  })
+}
+
 
   async login(email: string, password: string) {
     try {
@@ -958,12 +965,28 @@ export class LeadsService {
   }
 
   async update(id: string, updateLeadDto: Prisma.leadsUpdateInput, user?: any) {
-    const {
-      forward_to_next_department,
-      can_forward_to_next_department,
-      assign_to_counselling,
-      ...safeUpdateDto
-    } = updateLeadDto as any;
+  const {
+    forward_to_next_department,
+    can_forward_to_next_department,
+    assign_to_counselling,
+    journey_stage,
+    journey_state,
+    ...safeUpdateDto
+  } = updateLeadDto as any;
+
+  // Journey-stage advances are pure timeline writes — no `leads` columns change.
+  if (journey_stage) {
+    const { partnerId: actorId, source, actorName } = await this.resolveTimelineActorDetails(user);
+    await this.timelineService.logJourneyStage(
+      id,
+      journey_stage,
+      journey_state,
+      actorId,
+      source,
+      actorName,
+    );
+    return this.prisma.leads.findUnique({ where: { id } });
+  }
 
     const existingLead = await this.prisma.leads.findUnique({
       where: { id },
@@ -1012,6 +1035,7 @@ export class LeadsService {
         existingLead.current_department_id,
         -1, // fallback index unused when currentDepartmentId is present
       );
+
 
       if (!targetDepartmentId) {
         throw new BadRequestException('Cannot forward lead because no next active department is configured.');

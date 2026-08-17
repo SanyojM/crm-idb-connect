@@ -31,6 +31,7 @@ import {
 } from "@/lib/utils";
 import { DepartmentsAPI, LeadsAPI } from "@/lib/api";
 import LeadDocumentsTab from "@/components/leads-components/leadDocumentsTab";
+import StudentJourneyTimeline from "@/components/leads-components/leadsJourneyStatus";
 
 interface DepartmentOrderConfig {
     order_index: number;
@@ -134,6 +135,16 @@ export default function LeadDetailPage() {
             toast.success("Lead status updated successfully!");
         } catch (error) {
             toast.error("Failed to update lead status.");
+        }
+    };
+    const handleJourneyStageChange = async (stageKey: string, newState: string) => {
+        if (!lead || !lead.id) return;
+        try {
+            await updateLead(lead.id, { journey_stage: stageKey, journey_state: newState });
+            setTimelineRefreshKey((prev) => prev + 1);
+            toast.success("Journey stage updated!");
+        } catch (error) {
+            toast.error("Failed to update journey stage.");
         }
     };
 
@@ -315,15 +326,21 @@ export default function LeadDetailPage() {
                         </Dialog>
                     </div>
                 </div>
-                <StatusTimeline
+                <div className="space-y-2">
+                                    <StatusTimeline
                     currentStatus={lead.status || "new"}
                     currentDepartmentId={lead.current_department_id}
                     onChange={handleStatusChange}
                 />
-                <Tabs 
-                    aria-label="Lead Tabs" 
-                    variant="underlined" 
-                    className="mt-6" 
+                <StudentJourneyTimeline
+                    leadId={lead?.id ?? ""}
+                    onChange={handleJourneyStageChange}
+                />
+                </div>
+                <Tabs
+                    aria-label="Lead Tabs"
+                    variant="underlined"
+                    className="mt-6"
                     selectedKey={selectedTab}
                     onSelectionChange={(key) => setSelectedTab(key as string)}
                     isDisabled={false}
@@ -391,14 +408,14 @@ export default function LeadDetailPage() {
                     </Tab>
 
                     <Tab key="financials" title="Financials" isDisabled={disabledTabs.has('financials')}>
-                        <FinancialsTab leadId={lead?.id ?? ""}/>
+                        <FinancialsTab leadId={lead?.id ?? ""} />
                     </Tab>
 
                     <Tab key="chat" title="Chat" isDisabled={disabledTabs.has('chat')}>
-                        <ChatComponent 
-                            leadId={lead?.id ?? ""} 
-                            leadName={lead?.name ?? ""} 
-                            currentUserType="PARTNER" 
+                        <ChatComponent
+                            leadId={lead?.id ?? ""}
+                            leadName={lead?.name ?? ""}
+                            currentUserType="PARTNER"
                         />
                     </Tab>
 

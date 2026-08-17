@@ -75,6 +75,12 @@ export class LeadsController {
     return this.leadsService.findOne(id, user);
   }
 
+
+  @Get(':id/timeline')
+async getTimeline(@Param('id') id: string) {
+  return this.leadsService.getTimeline(id)
+}
+
   @Patch(':id')
   @RequirePermissions('Lead Update', 'Lead Manage')
   update(

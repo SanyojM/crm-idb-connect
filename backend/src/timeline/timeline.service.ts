@@ -220,6 +220,25 @@ export class TimelineService {
       actorName,
     );
   }
+  async logJourneyStage(
+  leadId: string,
+  stage: string,
+  newState: string,
+  createdBy: string | null,
+  source?: string | null,
+  actorName?: string | null,
+  oldState: string = 'PENDING',
+) {
+  await this.log(
+    leadId,
+    stage as timeline_event,
+    createdBy,
+    newState,
+    oldState,
+    source,
+    actorName,
+  );
+}
 
   /**
    * Fetches the most recent global timeline events.

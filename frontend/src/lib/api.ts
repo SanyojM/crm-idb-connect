@@ -17,7 +17,7 @@ function getAuthToken(): string | null {
 
 function getHeaders(includeAuth = true, contentType: string | null = 'application/json'): HeadersInit {
   const headers: HeadersInit = {};
-  
+
   if (contentType) {
     headers['Content-Type'] = contentType;
   }
@@ -39,7 +39,7 @@ async function handleResponse(res: Response) {
     for (const cookie of cookies) {
       const name = cookie.trim().split('=')[0];
       if (name === 'crm-auth-token' || name === 'auth-token' ||
-          name === 'crm-partner-session' || name === 'partner-session') {
+        name === 'crm-partner-session' || name === 'partner-session') {
         document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; secure; samesite=strict`;
       }
     }
@@ -65,10 +65,10 @@ async function handleResponse(res: Response) {
 
 export const AgentsAPI = {
   onboard: async (data: any) => {
-    const res = await fetch(`${API_BASE}/agents/onboard`, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify(data) 
+    const res = await fetch(`${API_BASE}/agents/onboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
     return handleResponse(res);
   },
@@ -83,24 +83,24 @@ export const AgentsAPI = {
     return handleResponse(res);
   },
   update: async (id: string, updates: any) => {
-    const res = await fetch(`${API_BASE}/agents/${id}`, { 
-      method: 'PATCH', 
-      headers: getHeaders(), 
-      body: JSON.stringify(updates) 
+    const res = await fetch(`${API_BASE}/agents/${id}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(updates)
     });
     return handleResponse(res);
   },
   updateStatus: async (id: string, status: 'APPROVED' | 'REJECTED', reason?: string) => {
-    const res = await fetch(`${API_BASE}/agents/${id}/status`, { 
-      method: 'PATCH', 
-      headers: getHeaders(), 
-      body: JSON.stringify({ status, reason }) 
+    const res = await fetch(`${API_BASE}/agents/${id}/status`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ status, reason })
     });
     return handleResponse(res);
   },
   delete: async (id: string) => {
-     const res = await fetch(`${API_BASE}/agents/${id}`, { method: 'DELETE', headers: getHeaders() });
-     return handleResponse(res);
+    const res = await fetch(`${API_BASE}/agents/${id}`, { method: 'DELETE', headers: getHeaders() });
+    return handleResponse(res);
   },
   getInquiries: async (status?: string) => {
     const url = status ? `${API_BASE}/agents/inquiries?status=${status}` : `${API_BASE}/agents/inquiries`;
@@ -212,6 +212,11 @@ export const LeadsAPI = {
     if (page) params.append('page', page.toString());
     if (limit) params.append('limit', limit.toString());
     const res = await fetch(`${API_BASE}/leads?${params.toString()}`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+
+  fetchTimeline: async (leadId: string) => {
+    const res = await fetch(`${API_BASE}/leads/${leadId}/timeline`, { headers: getHeaders() });
     return handleResponse(res);
   },
 
@@ -826,10 +831,10 @@ export const ContractsAPI = {
 
 export const SupportAPI = {
   createTicket: async (data: any) => {
-    const res = await fetch(`${API_BASE}/support`, { 
-      method: 'POST', 
-      headers: getHeaders(), 
-      body: JSON.stringify(data) 
+    const res = await fetch(`${API_BASE}/support`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
     });
     return handleResponse(res);
   },
